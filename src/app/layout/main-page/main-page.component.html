@@ -1,0 +1,179 @@
+<div class="container">
+  <h2>🛠️ Планировщик загрузки бригад</h2>
+
+  <!-- Дата -->
+  <div class="card">
+    <h3>🗓️ Дата начала 3-месячного периода</h3>
+    <input type="date" [(ngModel)]="startDate" class="input-date" />
+  </div>
+
+  <!-- Бригады -->
+  <div class="card">
+    <h3>👷 Бригады</h3>
+    <button (click)="addBrigade()" class="btn">+ Добавить бригаду</button>
+    <table class="excel-table">
+      <thead>
+      <tr>
+        <th>Название</th>
+        <th>Чел.</th>
+        <th>Часы/мес</th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let b of brigades; let i = index">
+        <td><input [(ngModel)]="b.name" /></td>
+        <td><input type="number" [(ngModel)]="b.peopleCount" /></td>
+        <td><input type="number" [(ngModel)]="b.load" /></td>
+        <td><button (click)="deleteBrigade(i)" class="btn btn-danger">🗑</button></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Изделия -->
+  <div class="card">
+    <h3>📦 Изделия</h3>
+    <button (click)="addProduct()" class="btn">+ Добавить изделие</button>
+    <table class="excel-table">
+      <thead>
+      <tr>
+        <th>Название</th>
+        <th>Серийный план</th>
+        <th>Н/серийный план</th>
+        <th>Слесарка (шт/ч)</th>
+        <th *ngFor="let b of brigades" colspan="2">{{ b.name }}</th>
+        <th></th>
+      </tr>
+      <tr>
+        <td colspan="4"></td>
+        <ng-container *ngFor="let b of brigades">
+          <td>шт/ч</td>
+          <td>Квал.</td>
+        </ng-container>
+        <td></td>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let p of products; let i = index">
+        <td><input [(ngModel)]="p.name" /></td>
+        <td><input type="number" [(ngModel)]="p.serialPlan" /></td>
+        <td><input type="number" [(ngModel)]="p.nonSerialPlan" /></td>
+        <td><input type="number" [(ngModel)]="p.assemblyRate" /></td>
+
+        <ng-container *ngFor="let b of brigades">
+          <td>
+            <input
+              type="number"
+              [(ngModel)]="p.productionRates[b.name]"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              [(ngModel)]="p.qualifications[b.name]"
+            />
+          </td>
+        </ng-container>
+
+        <td><button (click)="deleteProduct(i)" class="btn btn-danger">🗑</button></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Alpha -->
+  <div class="card">
+    <h3>⚖️ Настройка коэффициента α</h3>
+    <label>
+      Вес равномерной загрузки (α):
+      <input
+        type="number"
+        step="0.01"
+        min="0.01"
+        max="10"
+        [(ngModel)]="alpha"
+        class="input-number"
+      />
+    </label>
+    <ul style="font-size: 14px; color: #555; margin-top: 0.5em;">
+      <li>α &lt; 1 — приоритет на выполнение плана</li>
+      <li>α = 1 — сбалансировано</li>
+      <li>α &gt; 1 — приоритет на равномерность</li>
+    </ul>
+  </div>
+
+  <!-- Кнопка -->
+  <div style="margin: 1em 0;">
+    <button (click)="calculate()" class="btn">📊 Рассчитать график</button>
+  </div>
+
+  <!-- Ошибка -->
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Результат -->
+<!--  <div *ngIf="result">-->
+<!--    <h3>📆 Задачи по бригадам</h3>-->
+<!--    <div *ngFor="let item of (result['по_бригадам'] | keyvalue)">-->
+<!--      <strong>{{ item.key }}</strong>-->
+<!--      <table class="excel-table">-->
+<!--        <thead>-->
+<!--        <tr>-->
+<!--          <th>Изделие</th>-->
+<!--          <th>Тип</th>-->
+<!--          <th>Объем (шт)</th>-->
+<!--          <th>Часы</th>-->
+<!--        </tr>-->
+<!--        </thead>-->
+<!--        <tbody>-->
+<!--        <tr *ngFor="let t of item.value">-->
+<!--          <td>{{ t.product }}</td>-->
+<!--          <td>{{ t['тип'] }}</td>-->
+<!--          <td>{{ t['объем'] }}</td>-->
+<!--          <td>{{ t['часы'] }}</td>-->
+<!--        </tr>-->
+<!--        </tbody>-->
+<!--      </table>-->
+<!--    </div>-->
+
+<!--    <h3>⏱️ Загрузка бригад</h3>-->
+<!--    <table class="excel-table">-->
+<!--      <thead>-->
+<!--      <tr>-->
+<!--        <th>Бригада</th>-->
+<!--        <th>Часы</th>-->
+<!--        <th>Лимит</th>-->
+<!--        <th>Загрузка (%)</th>-->
+<!--      </tr>-->
+<!--      </thead>-->
+<!--      <tbody>-->
+<!--      <tr *ngFor="let item of (result['загрузка'] | keyvalue)">-->
+<!--        <td>{{ item.key }}</td>-->
+<!--        <td>{{ item.value['часы'] }}</td>-->
+<!--        <td>{{ item.value['лимит'] }}</td>-->
+<!--        <td>{{ item.value['загрузка_%'] }}%</td>-->
+<!--      </tr>-->
+<!--      </tbody>-->
+<!--    </table>-->
+
+<!--    <h3>📉 Выполнение плана</h3>-->
+<!--    <table class="excel-table">-->
+<!--      <thead>-->
+<!--      <tr>-->
+<!--        <th>Изделие</th>-->
+<!--        <th>План</th>-->
+<!--        <th>Факт</th>-->
+<!--        <th>Отклонение</th>-->
+<!--      </tr>-->
+<!--      </thead>-->
+<!--      <tbody>-->
+<!--      <tr *ngFor="let item of (result['по_производству'] | keyvalue)">-->
+<!--        <td>{{ item.key }}</td>-->
+<!--        <td>{{ item.value['план'] }}</td>-->
+<!--        <td>{{ item.value['факт'] }}</td>-->
+<!--        <td>{{ item.value['отклонение'] }}</td>-->
+<!--      </tr>-->
+<!--      </tbody>-->
+<!--    </table>-->
+<!--  </div>-->
+</div>
