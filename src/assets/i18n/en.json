@@ -1,0 +1,21 @@
+{
+  "TITLE": "Production Planner",
+  "START_DATE": "Start date of 3-month period",
+  "BRIGADES": "Brigades",
+  "ADD_BRIGADE": "+ Add Brigade",
+  "NAME": "Name",
+  "PEOPLE": "People",
+  "HOURS_PER_MONTH": "Hours/Month",
+  "PRODUCTS": "Products",
+  "ADD_PRODUCT": "+ Add Product",
+  "SERIAL_PLAN": "Serial plan",
+  "NON_SERIAL_PLAN": "Non-serial plan",
+  "ASSEMBLY_RATE": "Assembly rate",
+  "PIECES_PER_HOUR": "pcs/h",
+  "QUALIFICATION": "Qualif.",
+  "ALPHA": "Alpha coefficient",
+  "ALPHA_DESC1": "α < 1 — priority to plan execution",
+  "ALPHA_DESC2": "α = 1 — balanced",
+  "ALPHA_DESC3": "α > 1 — priority to uniformity",
+  "CALCULATE": "Calculate schedule"
+}

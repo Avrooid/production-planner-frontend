@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {Brigade} from "../../domain/brigade";
 import {Product} from "../../domain/product";
+import {TranslateService} from "@ngx-translate/core";
 
 @Component({
   selector: 'app-main-page',
@@ -21,7 +22,10 @@ export class MainPageComponent {
   result: any = null;
   error = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private translate: TranslateService) {
+    translate.addLangs(['en', 'ru']);
+    translate.setDefaultLang('ru');
+  }
 
   // === Бригады ===
   addBrigade() {

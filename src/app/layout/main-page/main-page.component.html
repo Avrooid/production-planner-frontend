@@ -1,22 +1,22 @@
 <div class="container">
-  <h2>🛠️ Планировщик загрузки бригад</h2>
+  <h2>{{ 'TITLE' | translate }}</h2>
 
   <!-- Дата -->
   <div class="card">
-    <h3>🗓️ Дата начала 3-месячного периода</h3>
+    <h3>{{ 'START_DATE' | translate }}</h3>
     <input type="date" [(ngModel)]="startDate" class="input-date" />
   </div>
 
   <!-- Бригады -->
   <div class="card">
-    <h3>👷 Бригады</h3>
-    <button (click)="addBrigade()" class="btn">+ Добавить бригаду</button>
+    <h3>{{ 'BRIGADES' | translate }}</h3>
+    <button (click)="addBrigade()" class="btn">{{ 'ADD_BRIGADE' | translate }}</button>
     <table class="excel-table">
       <thead>
       <tr>
-        <th>Название</th>
-        <th>Чел.</th>
-        <th>Часы/мес</th>
+        <th>{{ 'NAME' | translate }}</th>
+        <th>{{ 'PEOPLE' | translate }}</th>
+        <th>{{ 'HOURS_PER_MONTH' | translate }}</th>
         <th></th>
       </tr>
       </thead>
@@ -33,23 +33,23 @@
 
   <!-- Изделия -->
   <div class="card">
-    <h3>📦 Изделия</h3>
-    <button (click)="addProduct()" class="btn">+ Добавить изделие</button>
+    <h3>{{ 'PRODUCTS' | translate }}</h3>
+    <button (click)="addProduct()" class="btn">{{ 'ADD_PRODUCT' | translate }}</button>
     <table class="excel-table">
       <thead>
       <tr>
-        <th>Название</th>
-        <th>Серийный план</th>
-        <th>Н/серийный план</th>
-        <th>Слесарка (шт/ч)</th>
+        <th>{{ 'NAME' | translate }}</th>
+        <th>{{ 'SERIAL_PLAN' | translate }}</th>
+        <th>{{ 'NON_SERIAL_PLAN' | translate }}</th>
+        <th>{{ 'ASSEMBLY_RATE' | translate }}</th>
         <th *ngFor="let b of brigades" colspan="2">{{ b.name }}</th>
         <th></th>
       </tr>
       <tr>
         <td colspan="4"></td>
         <ng-container *ngFor="let b of brigades">
-          <td>шт/ч</td>
-          <td>Квал.</td>
+          <td>{{ 'PIECES_PER_HOUR' | translate }}</td>
+          <td>{{ 'QUALIFICATION' | translate }}</td>
         </ng-container>
         <td></td>
       </tr>
@@ -84,7 +84,7 @@
 
   <!-- Alpha -->
   <div class="card">
-    <h3>⚖️ Настройка коэффициента α</h3>
+    <h3>{{ 'ALPHA' | translate }}</h3>
     <label>
       Вес равномерной загрузки (α):
       <input
@@ -97,15 +97,15 @@
       />
     </label>
     <ul style="font-size: 14px; color: #555; margin-top: 0.5em;">
-      <li>α &lt; 1 — приоритет на выполнение плана</li>
-      <li>α = 1 — сбалансировано</li>
-      <li>α &gt; 1 — приоритет на равномерность</li>
+      <li>{{ 'ALPHA_DESC1' | translate }}</li>
+      <li>{{ 'ALPHA_DESC2' | translate }}</li>
+      <li>{{ 'ALPHA_DESC3' | translate }}</li>
     </ul>
   </div>
 
   <!-- Кнопка -->
   <div style="margin: 1em 0;">
-    <button (click)="calculate()" class="btn">📊 Рассчитать график</button>
+    <button (click)="calculate()" class="btn">{{ 'CALCULATE' | translate }}</button>
   </div>
 
   <!-- Ошибка -->
