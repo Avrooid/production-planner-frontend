@@ -1,0 +1,24 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ title || 'Подтверждение удаления' }}</h3>
+      <fa-icon class="close-btn" [icon]="faXmark" (click)="onClose()"></fa-icon>
+    </div>
+
+    <div style="padding: 20px">
+      <div class="modal-body">
+        <p>{{ message || 'Вы уверены, что хотите удалить этот элемент?' }}</p>
+        <p *ngIf="itemName" class="item-name">"{{ itemName }}"</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-cancel" (click)="onClose()">
+          {{ cancelButtonText || 'Отмена' }}
+        </button>
+        <button type="button" class="btn btn-confirm" (click)="onConfirm()">
+          {{ confirmButtonText || 'Подтвердить' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

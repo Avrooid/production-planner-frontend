@@ -1,0 +1,21 @@
+<header class="header">
+  <div class="header-container">
+    <!-- Содержимое хэдера -->
+  </div>
+</header>
+
+<div class="navigation-container">
+  <div class="navigation">
+    <div *ngFor="let page of pages" class="nav-item">
+      <a
+        [routerLink]="page.route"
+        class="nav-link"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: page.route === '/' }"
+      >
+        <fa-icon class="nav-icon" [icon]="page.icon"></fa-icon>
+        <span class="nav-title">{{ page.title }}</span>
+      </a>
+    </div>
+  </div>
+</div>

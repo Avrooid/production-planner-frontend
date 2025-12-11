@@ -1,0 +1,187 @@
+<app-loading-indicator
+  [isLoading]="isLoading"
+  [message]="'Загрузка'">
+</app-loading-indicator>
+<div class="main-container">
+  <div class="teams-layout">
+    <!-- Левая панель со списком команд -->
+    <div class="teams-list">
+      <h3>Бригады</h3>
+      <div *ngFor="let team of teams; let i = index"
+           [class.active]="selectedTeamIndex === i"
+           (click)="selectTeam(i)"
+           class="team-card">
+        <div class="team-name">{{ team.name }}</div>
+        <div class="team-meta">ID: {{ team.id }}</div>
+      </div>
+    </div>
+
+    <!-- Правая панель с таблицей -->
+    <div class="team-details" *ngIf="selectedTeam">
+      <div class="search-with-add">
+        <div class="search-container">
+          <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
+          <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" type="text" placeholder="Найти изделие"
+                 class="search-input">
+        </div>
+        <button class="btn add-item-button" (click)="openAddModal()">
+          <fa-icon [icon]="faPlus"></fa-icon>
+          <fa-icon [icon]="faBusinessTime" style="margin-left: 5px;"></fa-icon>
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="items-table">
+          <thead>
+          <tr>
+            <th>Изделие</th>
+            <th>Тип производства</th>
+            <th>Производительность</th>
+            <th>Квалификация</th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let productivity of getTeamProductivities(selectedTeam.id)">
+            <td>{{ productivity.product.name }}</td>
+            <td>
+              <span class="type-badge" [class.production]="productivity.productionType === 'SERIAL'"
+                    [class.assembly]="productivity.productionType === 'NON_SERIAL'">
+                {{ productivity.productionType === 'SERIAL' ? 'Серийное' : 'Несирийное' }}
+              </span>
+            </td>
+            <td>{{ productivity.productivity }}</td>
+            <td>{{ productivity.qualification }}</td>
+            <td>
+              <div class="actions">
+                <fa-icon class="edit-button" [icon]="faEdit" (click)="openEditModal(productivity)"></fa-icon>
+                <fa-icon class="delete-button" [icon]="faTrash" (click)="openDeleteModal(productivity)"></fa-icon>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Если нет выбранной команды -->
+      <div class="no-selection" *ngIf="!selectedTeam">
+        <p>Выберите бригаду из списка слева</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для добавления/редактирования производительности -->
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingProductivity ? 'Редактировать производительность' : 'Добавить производительность' }}</h3>
+      <fa-icon class="close-btn" [icon]="faXmark" (click)="closeModal()"></fa-icon>
+    </div>
+
+    <form class="modal-form" (ngSubmit)="saveProductivity()" #productivityForm="ngForm">
+      <!-- Изделие -->
+      <div class="form-group">
+        <label for="productId">Изделие</label>
+        <select
+          id="productId"
+          [(ngModel)]="currentProductivity.productId"
+          name="productId"
+          required
+          #productId="ngModel"
+          [class.error]="productId.invalid && (productId.dirty || productId.touched)">
+          <option value="" disabled selected>Выберите изделие</option>
+          <option *ngFor="let product of products" [value]="product.id">
+            {{ product.name }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="productId.invalid && (productId.dirty || productId.touched)">
+          Изделие обязательно
+        </div>
+      </div>
+
+      <!-- Тип производства -->
+      <div class="form-group">
+        <label for="productionType">Тип производства</label>
+        <select
+          id="productionType"
+          [(ngModel)]="currentProductivity.productionType"
+          name="productionType"
+          required
+          #productionType="ngModel"
+          [class.error]="productionType.invalid && (productionType.dirty || productionType.touched)">
+          <option value="" disabled selected>Выберите тип производства</option>
+          <option value="serial">Серийное</option>
+          <option value="non_serial">Несерийное</option>
+        </select>
+        <div class="error-message" *ngIf="productionType.invalid && (productionType.dirty || productionType.touched)">
+          Тип производства обязателен
+        </div>
+      </div>
+
+      <!-- Квалификация -->
+      <div class="form-group">
+        <label for="qualification">Квалификация (1-2)</label>
+        <input
+          type="number"
+          id="qualification"
+          [(ngModel)]="currentProductivity.qualification"
+          name="qualification"
+          min="1"
+          max="2"
+          step="0.1"
+          required
+          placeholder="Квалификация"
+          #qualification="ngModel"
+          [class.error]="qualification.invalid && (qualification.dirty || qualification.touched)">
+        <div class="error-message" *ngIf="qualification.invalid && (qualification.dirty || qualification.touched)">
+          <span *ngIf="qualification.errors?.['required']">Квалификация обязательна</span>
+          <span *ngIf="qualification.errors?.['min'] || qualification.errors?.['max']">
+            Квалификация должна быть от 1 до 2
+          </span>
+        </div>
+      </div>
+
+      <!-- Производительность -->
+      <div class="form-group">
+        <label for="productivity">Производительность (ед./час)</label>
+        <input
+          type="number"
+          id="productivity"
+          [(ngModel)]="currentProductivity.productivity"
+          name="productivity"
+          min="0.01"
+          step="0.01"
+          required
+          placeholder="Производительность"
+          #productivityInput="ngModel"
+          [class.error]="productivityInput.invalid && (productivityInput.dirty || productivityInput.touched)">
+        <div class="error-message" *ngIf="productivityInput.invalid && (productivityInput.dirty || productivityInput.touched)">
+          <span *ngIf="productivityInput.errors?.['required']">Производительность обязательна</span>
+          <span *ngIf="productivityInput.errors?.['min']">Минимальная производительность: 0.01</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="submit"
+          class="btn"
+          [disabled]="productivityForm.invalid">
+          {{ editingProductivity ? 'Сохранить' : 'Добавить' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<app-confirm-delete-modal
+  [isOpen]="isDeleteModalOpen"
+  [title]="'Подтверждение удаления'"
+  [message]="'Вы уверены, что хотите удалить запись о производительности?'"
+  [itemName]="productivityToDelete?.product?.name || ''"
+  [confirmButtonText]="'Удалить'"
+  [cancelButtonText]="'Отмена'"
+  (confirm)="confirmDelete()"
+  (close)="closeDeleteModal()">
+</app-confirm-delete-modal>

@@ -1,0 +1,155 @@
+<app-loading-indicator
+  [isLoading]="isLoading"
+  [message]="'Загрузка'">
+</app-loading-indicator>
+<div class="main-container">
+  <div class="search-with-add">
+    <div class="search-container">
+      <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
+      <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" (input)="onSearchInput($event)" type="text" placeholder="Найти изделие"
+             class="search-input">
+    </div>
+    <button class="btn add-item-button" (click)="openAddModal()">
+      <fa-icon [icon]="faPlus"></fa-icon>
+      <fa-icon [icon]="faIndustry" style="margin-left: 5px;"></fa-icon>
+    </button>
+  </div>
+  <div>
+    <div>
+      <div class="table-container">
+        <table class="items-table">
+          <thead>
+          <tr>
+            <th>Название</th>
+            <th>
+              <div class="sortable-header" style="display: flex;">
+                <span>Производительность сборки</span>
+                <div (click)="toggleSort('assemblyProductivity')" style="display: flex; flex-direction: column; margin-top: 4px; cursor: pointer;">
+                  <fa-icon class="sort-icon-up" [icon]="faSortUp"
+                           [class.active]="sortField === 'assemblyProductivity' && sortDirection === 'asc'"></fa-icon>
+                  <fa-icon class="sort-icon-down" [icon]="faSortDown"
+                           [class.active]="sortField === 'assemblyProductivity' && sortDirection === 'desc'"></fa-icon>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="filterable-header">
+                <span>Статус</span>
+                <fa-icon class="filter-icon" [icon]="faFilter"
+                         (click)="toggleFilter('active')"
+                         [class.active]="hasActiveStatusFilter()"></fa-icon>
+                <div class="filter-popup" *ngIf="activeFilter === 'active'">
+                  <div class="filter-options">
+                    <div class="filter-option">
+                      <input type="checkbox" id="active"
+                             [checked]="filterValues['active']?.includes(true)"
+                             (change)="onFilterChange('active', true, $event)">
+                      <label for="active">Активен</label>
+                    </div>
+                    <div class="filter-option">
+                      <input type="checkbox" id="inactive"
+                             [checked]="filterValues['active']?.includes(false)"
+                             (change)="onFilterChange('active', false, $event)">
+                      <label for="inactive">Неактивен</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let product of filteredProducts">
+            <td>{{ product.name }}</td>
+            <td>{{ product.assemblyProductivity }}</td>
+            <td>
+              <span class="status-badge" [class.active]="product.active" [class.inactive]="!product.active">
+                {{ product.active ? 'Активна' : 'Неактивна' }}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                <fa-icon class="edit-button" [icon]="faEdit" (click)="openEditModal(product)"></fa-icon>
+                <fa-icon class="delete-button" [icon]="faTrash" (click)="openDeleteModal(product)"></fa-icon>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="no-teams" *ngIf="false"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingProduct ? 'Редактировать продукт' : 'Добавить продукт' }}</h3>
+      <fa-icon class="close-btn" [icon]="faXmark" (click)="closeModal()"></fa-icon>
+    </div>
+
+    <form class="modal-form" (ngSubmit)="saveProduct()" #productForm="ngForm">
+      <!-- Наименование -->
+      <div class="form-group">
+        <input
+          type="text"
+          [(ngModel)]="currentProduct.name"
+          name="name"
+          required
+          placeholder="Наименование"
+          #name="ngModel"
+          [class.error]="name.invalid && (name.dirty || name.touched)">
+        <div class="error-message" *ngIf="name.invalid && (name.dirty || name.touched)">
+          Наименование обязательно
+        </div>
+      </div>
+
+      <!-- Производительность -->
+      <div class="form-group">
+        <input
+          type="number"
+          [(ngModel)]="currentProduct.assemblyProductivity"
+          name="assemblyProductivity"
+          min="0.01"
+          step="0.01"
+          required
+          placeholder="Производительность сборки"
+          #assemblyProductivity="ngModel"
+          [class.error]="assemblyProductivity.invalid && (assemblyProductivity.dirty || assemblyProductivity.touched)">
+        <div class="error-message" *ngIf="assemblyProductivity.invalid && (assemblyProductivity.dirty || assemblyProductivity.touched)">
+          <span *ngIf="assemblyProductivity.errors?.['required']">Производительность обязательна</span>
+          <span *ngIf="assemblyProductivity.errors?.['min']">Минимальная производительность: 0.01</span>
+        </div>
+      </div>
+
+      <!-- Статус -->
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="currentProduct.active" name="is_active" style="margin: 0;">
+          Активен
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="submit"
+          class="btn"
+          [disabled]="productForm.invalid">
+          {{ editingProduct ? 'Сохранить' : 'Добавить' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<app-confirm-delete-modal
+  [isOpen]="isDeleteModalOpen"
+  [title]="'Подтверждение удаления'"
+  [message]="'Вы уверены, что хотите удалить это изделие?'"
+  [itemName]="productToDelete?.name || ''"
+  [confirmButtonText]="'Удалить'"
+  [cancelButtonText]="'Отмена'"
+  (confirm)="confirmDelete()"
+  (close)="closeDeleteModal()">
+</app-confirm-delete-modal>

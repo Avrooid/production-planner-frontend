@@ -1,0 +1,279 @@
+<app-loading-indicator
+  [isLoading]="isLoading"
+  message="Загрузка">
+</app-loading-indicator>
+<div class="main-container">
+  <div class="search-with-add">
+    <div class="search-container">
+      <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
+      <input
+        (focus)="onSearchFocus()"
+        (blur)="onSearchBlur()"
+        type="text"
+        placeholder="Найти бригаду"
+        class="search-input"
+        [(ngModel)]="searchQuery"
+        (input)="applyFilters()">
+    </div>
+    <button class="btn add-item-button" (click)="openAddModal()">
+      <fa-icon [icon]="faPlus"></fa-icon>
+      <fa-icon [icon]="faUsers" style="margin-left: 5px;"></fa-icon>
+    </button>
+  </div>
+  <div>
+    <div>
+      <div class="table-container">
+        <table class="items-table">
+          <thead>
+          <tr>
+            <th>Название</th>
+            <th>
+              <div class="filterable-header">
+                <span>Тип бригады</span>
+                <fa-icon class="filter-icon" [icon]="faFilter"
+                         (click)="toggleFilter('teamType')"
+                         [class.active]="activeFilter === 'teamType' || hasActiveTeamTypeFilter()"></fa-icon>
+                <div class="filter-popup" *ngIf="activeFilter === 'teamType'">
+                  <div class="filter-options">
+                    <div class="filter-option">
+                      <input type="checkbox" id="prod"
+                             [checked]="filterValues['teamType']?.includes('PRODUCTION')"
+                             (change)="onFilterChange('teamType', 'PRODUCTION', $event)">
+                      <label for="prod">Производственная</label>
+                    </div>
+                    <div class="filter-option">
+                      <input type="checkbox" id="assembly"
+                             [checked]="filterValues['teamType']?.includes('ASSEMBLY')"
+                             (change)="onFilterChange('teamType', 'ASSEMBLY', $event)">
+                      <label for="assembly">Слесарная</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="sortable-header" style="display: flex;">
+                <span>Кол-во сотрудников</span>
+                <div (click)="toggleSort('employeeCount')" style="display: flex; flex-direction: column; margin-top: 4px; cursor: pointer;">
+                  <fa-icon class="sort-icon-up" [icon]="faSortUp"
+                           [class.active]="sortField === 'employeeCount' && sortDirection === 'asc'"></fa-icon>
+                  <fa-icon class="sort-icon-down" [icon]="faSortDown"
+                           [class.active]="sortField === 'employeeCount' && sortDirection === 'desc'"></fa-icon>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="sortable-header" style="display: flex;">
+                <span>Часы в месяц</span>
+                <div (click)="toggleSort('monthlyHours')" style="display: flex; flex-direction: column; margin-top: 4px; cursor: pointer;">
+                  <fa-icon class="sort-icon-up" [icon]="faSortUp"
+                           [class.active]="sortField === 'monthlyHours' && sortDirection === 'asc'"></fa-icon>
+                  <fa-icon class="sort-icon-down" [icon]="faSortDown"
+                           [class.active]="sortField === 'monthlyHours' && sortDirection === 'desc'"></fa-icon>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="sortable-header" style="display: flex;">
+                <span>Макс. часов в день</span>
+                <div (click)="toggleSort('maxDailyHours')" style="display: flex; flex-direction: column; margin-top: 4px; cursor: pointer;">
+                  <fa-icon class="sort-icon-up" [icon]="faSortUp"
+                           [class.active]="sortField === 'maxDailyHours' && sortDirection === 'asc'"></fa-icon>
+                  <fa-icon class="sort-icon-down" [icon]="faSortDown"
+                           [class.active]="sortField === 'maxDailyHours' && sortDirection === 'desc'"></fa-icon>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="filterable-header">
+                <span>Статус</span>
+                <fa-icon class="filter-icon" [icon]="faFilter"
+                         (click)="toggleFilter('status')"
+                         [class.active]="activeFilter === 'status' || hasActiveStatusFilter()"></fa-icon>
+                <div class="filter-popup" *ngIf="activeFilter === 'status'">
+                  <div class="filter-options">
+                    <div class="filter-option">
+                      <input type="checkbox" id="active"
+                             [checked]="filterValues['is_active']?.includes(true)"
+                             (change)="onFilterChange('is_active', true, $event)">
+                      <label for="active">Активна</label>
+                    </div>
+                    <div class="filter-option">
+                      <input type="checkbox" id="inactive"
+                             [checked]="filterValues['is_active']?.includes(false)"
+                             (change)="onFilterChange('is_active', false, $event)">
+                      <label for="inactive">Неактивна</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let team of filteredTeams">
+            <td>{{ team.name }}</td>
+            <td>
+              <span class="type-badge" [class.production]="team.teamType === 'PRODUCTION'"
+                    [class.assembly]="team.teamType === 'ASSEMBLY'">
+                {{ team.teamType === 'PRODUCTION' ? 'Производственная' : 'Слесарная' }}
+              </span>
+            </td>
+            <td>{{ team.employeeCount }}</td>
+            <td>{{ team.monthlyHours }} ч</td>
+            <td>{{ team.maxDailyHours }} ч</td>
+            <td>
+              <span class="status-badge" [class.active]="team.active" [class.inactive]="!team.active">
+                {{ team.active ? 'Активна' : 'Неактивна' }}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                <fa-icon class="edit-button" [icon]="faEdit" (click)="openEditModal(team)"></fa-icon>
+                <fa-icon class="delete-button" [icon]="faTrash" (click)="openDeleteModal(team)"></fa-icon>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно добавления/редактирования бригады -->
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingTeam ? 'Редактировать бригаду' : 'Добавить бригаду' }}</h3>
+      <fa-icon class="close-btn" [icon]="faXmark" (click)="closeModal()"></fa-icon>
+    </div>
+
+    <form class="modal-form" (ngSubmit)="saveTeam()" #teamForm="ngForm">
+      <!-- Название -->
+      <div class="form-group">
+        <label for="name">Название</label>
+        <input
+          id="name"
+          type="text"
+          [(ngModel)]="currentTeam.name"
+          name="name"
+          required
+          placeholder="Название бригады"
+          #name="ngModel"
+          [class.error]="name.invalid && (name.dirty || name.touched)">
+        <div class="error-message" *ngIf="name.invalid && (name.dirty || name.touched)">
+          Название обязательно
+        </div>
+      </div>
+
+      <!-- Тип бригады -->
+      <div class="form-group">
+        <label for="teamType">Тип бригады</label>
+        <select
+          [(ngModel)]="currentTeam.teamType"
+          id="teamType"
+          name="teamType"
+          required
+          #teamType="ngModel"
+          [class.error]="teamType.invalid && (teamType.dirty || teamType.touched)">
+          <option value="">Выберите тип бригады</option>
+          <option value="production">Производственная</option>
+          <option value="assembly">Слесарная</option>
+        </select>
+        <div class="error-message" *ngIf="teamType.invalid && (teamType.dirty || teamType.touched)">
+          Тип бригады обязателен
+        </div>
+      </div>
+
+      <!-- Количество сотрудников -->
+      <div class="form-group">
+        <label for="employeeCount">Количество сотрудников</label>
+        <input
+          type="number"
+          [(ngModel)]="currentTeam.employeeCount"
+          id="employeeCount"
+          name="employeeCount"
+          min="1"
+          required
+          placeholder="Количество сотрудников"
+          #employeeCount="ngModel"
+          [class.error]="employeeCount.invalid && (employeeCount.dirty || employeeCount.touched)">
+        <div class="error-message" *ngIf="employeeCount.invalid && (employeeCount.dirty || employeeCount.touched)">
+          <span *ngIf="employeeCount.errors?.['required']">Количество сотрудников обязательно</span>
+          <span *ngIf="employeeCount.errors?.['min']">Минимальное количество: 1</span>
+        </div>
+      </div>
+
+      <!-- Часы в месяц -->
+      <div class="form-group">
+        <label for="monthlyHours">Часы в месяц</label>
+        <input
+          type="number"
+          [(ngModel)]="currentTeam.monthlyHours"
+          id="monthlyHours"
+          name="monthlyHours"
+          min="1"
+          required
+          placeholder="Часы работы в месяц"
+          #monthlyHours="ngModel"
+          [class.error]="monthlyHours.invalid && (monthlyHours.dirty || monthlyHours.touched)">
+        <div class="error-message" *ngIf="monthlyHours.invalid && (monthlyHours.dirty || monthlyHours.touched)">
+          <span *ngIf="monthlyHours.errors?.['required']">Часы в месяц обязательны</span>
+          <span *ngIf="monthlyHours.errors?.['min']">Минимальное количество часов: 1</span>
+        </div>
+      </div>
+
+      <!-- Макс. часов в день -->
+      <div class="form-group">
+        <label for="maxDailyHours">Макс. часов в день</label>
+        <input
+          type="number"
+          [(ngModel)]="currentTeam.maxDailyHours"
+          id="maxDailyHours"
+          name="maxDailyHours"
+          min="1"
+          max="24"
+          required
+          placeholder="Максимальные часы в день"
+          #maxDailyHours="ngModel"
+          [class.error]="maxDailyHours.invalid && (maxDailyHours.dirty || maxDailyHours.touched)">
+        <div class="error-message" *ngIf="maxDailyHours.invalid && (maxDailyHours.dirty || maxDailyHours.touched)">
+          <span *ngIf="maxDailyHours.errors?.['required']">Максимальные часы в день обязательны</span>
+          <span *ngIf="maxDailyHours.errors?.['min']">Минимальное количество часов: 1</span>
+          <span *ngIf="maxDailyHours.errors?.['max']">Максимальное количество часов: 24</span>
+        </div>
+      </div>
+
+      <!-- Статус -->
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="currentTeam.active" name="is_active" style="margin: 0;">
+          Активна
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="submit"
+          class="btn"
+          [disabled]="teamForm.invalid">
+          {{ editingTeam ? 'Сохранить' : 'Добавить' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<app-confirm-delete-modal
+  [isOpen]="isDeleteModalOpen"
+  [title]="'Подтверждение удаления'"
+  [message]="'Вы уверены, что хотите удалить эту бригаду?'"
+  [itemName]="teamToDelete?.name || ''"
+  [confirmButtonText]="'Удалить'"
+  [cancelButtonText]="'Отмена'"
+  (confirm)="confirmDelete()"
+  (close)="closeDeleteModal()">
+</app-confirm-delete-modal>
