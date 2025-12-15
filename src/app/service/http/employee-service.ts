@@ -3,15 +3,17 @@ import {EmployeeDto} from "../../domain/employees/employee-dto";
 import {map, Observable} from "rxjs";
 import {Injectable} from "@angular/core";
 import {EmployeeDetails} from "../../domain/employees/employee-details";
+import {ConfigService} from "../config-service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class EmployeeService {
 
-  private readonly baseUrl = '/api/v1/employees'; // Подставь реальный базовый URL API
+  private readonly baseUrl = `${this.configService.serverAddress}/api/v1/employees`; // Подставь реальный базовый URL API
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient,
+              private configService: ConfigService) {}
 
   // Получить всех сотрудников
   getEmployees(): Observable<EmployeeDto[]> {

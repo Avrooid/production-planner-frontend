@@ -3,14 +3,16 @@ import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {TeamProductivityDto} from "../../domain/team-productivity/team-productivity-dto";
 import {TeamProductivityDetails} from "../../domain/team-productivity/team-productivity-details";
+import {ConfigService} from "../config-service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class TeamProductivityService {
-  private apiUrl = '/api/v1/team-productivity'; // или '/backend/api/v1/team-productivity' в зависимости от конфигурации
+  private apiUrl = `${this.configService.serverAddress}/api/v1/team-productivity`; // или '/backend/api/v1/team-productivity' в зависимости от конфигурации
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient,
+              private configService: ConfigService) {}
 
   /**
    * Получить все записи о производительности бригад
