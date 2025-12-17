@@ -3,16 +3,14 @@ import {Injectable} from "@angular/core";
 import {map, Observable} from "rxjs";
 import {ProductDto} from "../../domain/products/product-dto";
 import {ProductDetails} from "../../domain/products/product-details";
-import {ConfigService} from "../config-service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-  private apiUrl = `${this.configService.serverAddress}/api/v1/products`;
+  private apiUrl = `/api/v1/products`;
 
-  constructor(private http: HttpClient,
-              private configService: ConfigService) {}
+  constructor(private http: HttpClient) {}
 
   /**
    * Получить все изделия

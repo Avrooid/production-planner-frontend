@@ -4,16 +4,14 @@ import {Observable} from "rxjs";
 import {ProductionSessionDto} from "../../domain/production-session/production-session-dto";
 import {ProductionSessionDetails} from "../../domain/production-session/production-session-details";
 import {SessionOrderDetails} from "../../domain/production-session/session-order-details";
-import {ConfigService} from "../config-service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductionSessionService {
-  private apiUrl = `${this.configService.serverAddress}/api/v1/sessions`;
+  private apiUrl = `/api/v1/sessions`;
 
-  constructor(private http: HttpClient,
-              private configService: ConfigService) {}
+  constructor(private http: HttpClient) {}
 
   getAllProductionSessions(): Observable<ProductionSessionDto[]> {
     return this.http.get<ProductionSessionDto[]>(this.apiUrl);

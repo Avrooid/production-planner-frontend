@@ -3,7 +3,6 @@ import {HttpClient} from "@angular/common/http";
 import {map, Observable} from "rxjs";
 import {TeamDto} from "../../domain/teams/team-dto";
 import {TeamDetails} from "../../domain/teams/team-details";
-import {ConfigService} from "../config-service";
 
 
 @Injectable({
@@ -11,10 +10,9 @@ import {ConfigService} from "../config-service";
 })
 export class TeamService {
 
-  private apiUrl: string = `${this.configService.serverAddress}/api/v1/teams`;
+  private apiUrl: string = `/api/v1/teams`;
 
-  constructor(private http: HttpClient,
-              private configService: ConfigService) {}
+  constructor(private http: HttpClient) {}
 
   /**
    * Получить бригады
