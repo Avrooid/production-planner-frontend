@@ -139,3 +139,78 @@ table {
   border-radius: 8px;
   background-color: #fafafa;
 }
+
+.modal-content {
+  /* Кастомный скроллбар для WebKit браузеров (Chrome, Safari, Edge) */
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #c1c1c1, #a1a1a1);
+    border-radius: 10px;
+    border: 2px solid #f8f9fa;
+    transition: all 0.3s ease;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #a1a1a1, #818181);
+    cursor: pointer;
+  }
+
+  &::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, #818181, #616161);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Плавный скролл */
+  scroll-behavior: smooth;
+  scrollbar-width: thin; /* Для Firefox - тонкий скроллбар */
+  scrollbar-color: #c1c1c1 #f8f9fa; /* Для Firefox */
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.tab-btn {
+  padding: 10px 24px;
+  background: transparent;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  min-width: 120px;
+  text-align: center;
+}
+
+.tab-btn:hover {
+  background: rgba(0, 123, 255, 0.05);
+  border-color: #adb5bd;
+}
+
+.tab-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}

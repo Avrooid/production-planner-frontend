@@ -16,11 +16,11 @@
            [class.active]="selectedSessionIndex === i"
            (click)="selectSession(i)"
            class="team-card">
-        <div style="width: 80%;">
+        <div style="width: 70%;">
           <div class="team-name">{{ session.name }}</div>
           <div class="team-meta">{{ session.startDate}} - {{ session.endDate }}</div>
         </div>
-        <div style="width: 20%; display: flex; flex-direction: row; align-items: center;">
+        <div style="width: 30%; display: flex; flex-direction: row; align-items: center;">
           <fa-icon class="edit-button" [icon]="faEdit" (click)="openEditSessionModal(session, $event)"></fa-icon>
           <fa-icon class="delete-button" [icon]="faTrash" (click)="openDeleteSessionModal(session, $event)"></fa-icon>
         </div>
@@ -29,47 +29,113 @@
 
     <!-- Правая панель с таблицей -->
     <div class="team-details" *ngIf="selectedSession">
-      <div class="search-with-add">
-        <div class="search-container">
-          <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
-          <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" (input)="onSearchInput()" type="text" placeholder="Найти изделие"
-                 class="search-input">
-        </div>
-        <button class="btn add-item-button" (click)="openAddOrderModal()">
-          <fa-icon [icon]="faPlus"></fa-icon>
-          <fa-icon [icon]="faClock" style="margin-left: 5px;"></fa-icon>
+      <div class="tabs">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'orders'"
+          (click)="activeTab = 'orders'">
+          Заказы
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'optimization'"
+          (click)="activeTab = 'optimization'">
+          Оптимизация
         </button>
       </div>
+      <div *ngIf="activeTab === 'orders'">
+        <div class="search-with-add">
+          <div class="search-container">
+            <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
+            <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" (input)="onSearchInput()" type="text" placeholder="Найти изделие"
+                   class="search-input">
+          </div>
+          <button class="btn add-item-button" (click)="openAddOrderModal()">
+            <fa-icon [icon]="faPlus"></fa-icon>
+            <fa-icon [icon]="faClock" style="margin-left: 5px;"></fa-icon>
+          </button>
+        </div>
 
-      <div class="table-container">
-        <table class="items-table">
-          <thead>
-          <tr>
-            <th>Изделие</th>
-            <th>Тип производства</th>
-            <th>Количество</th>
-            <th>Дедлайн</th>
-            <th></th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr *ngFor="let sessionOrder of selectedSession.sessionOrders">
-            <td>{{ sessionOrder.product.name }}</td>
-            <td>
+        <div class="table-container">
+          <table class="items-table">
+            <thead>
+            <tr>
+              <th>Изделие</th>
+              <th>Тип производства</th>
+              <th>Количество</th>
+              <th>Дедлайн</th>
+              <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let sessionOrder of selectedSession.sessionOrders">
+              <td>{{ sessionOrder.product.name }}</td>
+              <td>
               <span class="type-badge" [class.production]="sessionOrder.productionType === 'SERIAL'"
                     [class.assembly]="sessionOrder.productionType === 'NON_SERIAL'">
                 {{ sessionOrder.productionType === 'SERIAL' ? 'Серийное' : 'Несирийное' }}
               </span>
-            </td>
-            <td>{{ sessionOrder.quantity }}</td>
-            <td>{{ sessionOrder.deadlineDate }}</td>
-            <td>
-              <div class="actions">
-              </div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+              </td>
+              <td>{{ sessionOrder.quantity }}</td>
+              <td>{{ sessionOrder.deadlineDate }}</td>
+              <td>
+                <div class="actions">
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div *ngIf="activeTab === 'optimization'">
+        <div class="search-with-add">
+          <div class="search-container">
+            <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
+            <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" (input)="onSearchInput()" type="text" placeholder="Найти изделие"
+                   class="search-input">
+          </div>
+          <button class="btn add-item-button" (click)="openOptimizationModal(selectedSession.id)">
+            <fa-icon [icon]="faPlus"></fa-icon>
+            <fa-icon [icon]="faCalculator" style="margin-left: 5px;"></fa-icon>
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="items-table">
+            <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Версия модели</th>
+              <th>kTardyDefault</th>
+              <th>kUnder</th>
+              <th>kOver</th>
+              <th>alpha</th>
+              <th>beta</th>
+              <th>deltaBuffer</th>
+              <th>comment</th>
+              <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let optimization of optimizationsBySession">
+              <td>{{ optimization.runTimestamp }}</td>
+              <td>{{ optimization.modelVersion }}</td>
+              <td>{{ optimization.kTardyDefault }}</td>
+              <td>{{ optimization.kUnder }}</td>
+              <td>{{ optimization.kOver }}</td>
+              <td>{{ optimization.alpha }}</td>
+              <td>{{ optimization.beta }}</td>
+              <td>{{ optimization.deltaBuffer }}</td>
+              <td>{{ optimization.comment }}</td>
+              <td>
+                <div class="actions">
+                  <fa-icon class="edit-button" [icon]="faEdit" (click)="openOptimizationModal(selectedSession.id, optimization)"></fa-icon>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Если нет выбранной команды -->
@@ -270,3 +336,200 @@
   (confirm)="confirmDeleteOrder()"
   (close)="closeDeleteOrderModal()">
 </app-confirm-delete-modal>
+
+
+<div class="modal-overlay" *ngIf="isOptimizationModalOpen" (click)="closeOptimizationModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingOptimization ? 'Редактировать оптимизацию' : 'Создать новую оптимизацию' }}</h3>
+      <fa-icon class="close-btn" [icon]="faXmark" (click)="closeOptimizationModal()"></fa-icon>
+    </div>
+
+    <form class="modal-form" (ngSubmit)="runOptimization()" #optimizationForm="ngForm">
+      <!-- Дата выполнения -->
+      <div class="form-group">
+        <label for="runTimestamp">Дата выполнения</label>
+        <input
+          type="date"
+          id="runTimestamp"
+          [(ngModel)]="currentOptimization.runTimestamp"
+          name="runTimestamp"
+          required
+          #runTimestamp="ngModel"
+          [class.error]="runTimestamp.invalid && (runTimestamp.dirty || runTimestamp.touched)">
+        <div class="error-message" *ngIf="runTimestamp.invalid && (runTimestamp.dirty || runTimestamp.touched)">
+          Дата выполнения обязательна
+        </div>
+      </div>
+
+      <!-- Версия модели -->
+      <div class="form-group">
+        <label for="modelVersion">Версия модели</label>
+        <input
+          type="text"
+          id="modelVersion"
+          [(ngModel)]="currentOptimization.modelVersion"
+          name="modelVersion"
+          required
+          minlength="1"
+          placeholder="Введите версию модели (например, v1.0.0)"
+          #modelVersion="ngModel"
+          [class.error]="modelVersion.invalid && (modelVersion.dirty || modelVersion.touched)">
+        <div class="error-message" *ngIf="modelVersion.invalid && (modelVersion.dirty || modelVersion.touched)">
+          <span *ngIf="modelVersion.errors?.['required']">Версия модели обязательна</span>
+          <span *ngIf="modelVersion.errors?.['minlength']">Введите версию модели</span>
+        </div>
+      </div>
+
+      <!-- Коэффициенты в две колонки -->
+      <div class="form-row">
+        <!-- kTardyDefault -->
+        <div class="form-group">
+          <label for="kTardyDefault">Коэффициент опоздания (kTardyDefault)</label>
+          <input
+            type="number"
+            id="kTardyDefault"
+            [(ngModel)]="currentOptimization.kTardyDefault"
+            name="kTardyDefault"
+            required
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            #kTardyDefault="ngModel"
+            [class.error]="kTardyDefault.invalid && (kTardyDefault.dirty || kTardyDefault.touched)">
+          <div class="error-message" *ngIf="kTardyDefault.invalid && (kTardyDefault.dirty || kTardyDefault.touched)">
+            <span *ngIf="kTardyDefault.errors?.['required']">Коэффициент обязателен</span>
+            <span *ngIf="kTardyDefault.errors?.['min']">Значение должно быть положительным</span>
+          </div>
+        </div>
+
+        <!-- kUnder -->
+        <div class="form-group">
+          <label for="kUnder">Коэффициент недоиспользования (kUnder)</label>
+          <input
+            type="number"
+            id="kUnder"
+            [(ngModel)]="currentOptimization.kUnder"
+            name="kUnder"
+            required
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            #kUnder="ngModel"
+            [class.error]="kUnder.invalid && (kUnder.dirty || kUnder.touched)">
+          <div class="error-message" *ngIf="kUnder.invalid && (kUnder.dirty || kUnder.touched)">
+            <span *ngIf="kUnder.errors?.['required']">Коэффициент обязателен</span>
+            <span *ngIf="kUnder.errors?.['min']">Значение должно быть положительным</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <!-- kOver -->
+        <div class="form-group">
+          <label for="kOver">Коэффициент переиспользования (kOver)</label>
+          <input
+            type="number"
+            id="kOver"
+            [(ngModel)]="currentOptimization.kOver"
+            name="kOver"
+            required
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            #kOver="ngModel"
+            [class.error]="kOver.invalid && (kOver.dirty || kOver.touched)">
+          <div class="error-message" *ngIf="kOver.invalid && (kOver.dirty || kOver.touched)">
+            <span *ngIf="kOver.errors?.['required']">Коэффициент обязателен</span>
+            <span *ngIf="kOver.errors?.['min']">Значение должно быть положительным</span>
+          </div>
+        </div>
+
+        <!-- alpha -->
+        <div class="form-group">
+          <label for="alpha">Коэффициент альфа (α)</label>
+          <input
+            type="number"
+            id="alpha"
+            [(ngModel)]="currentOptimization.alpha"
+            name="alpha"
+            required
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            #alpha="ngModel"
+            [class.error]="alpha.invalid && (alpha.dirty || alpha.touched)">
+          <div class="error-message" *ngIf="alpha.invalid && (alpha.dirty || alpha.touched)">
+            <span *ngIf="alpha.errors?.['required']">Коэффициент обязателен</span>
+            <span *ngIf="alpha.errors?.['min']">Значение должно быть положительным</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <!-- beta -->
+        <div class="form-group">
+          <label for="beta">Коэффициент бета (β)</label>
+          <input
+            type="number"
+            id="beta"
+            [(ngModel)]="currentOptimization.beta"
+            name="beta"
+            required
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            #beta="ngModel"
+            [class.error]="beta.invalid && (beta.dirty || beta.touched)">
+          <div class="error-message" *ngIf="beta.invalid && (beta.dirty || beta.touched)">
+            <span *ngIf="beta.errors?.['required']">Коэффициент обязателен</span>
+            <span *ngIf="beta.errors?.['min']">Значение должно быть положительным</span>
+          </div>
+        </div>
+
+        <!-- deltaBuffer -->
+        <div class="form-group">
+          <label for="deltaBuffer">Буфер дельты (deltaBuffer)</label>
+          <input
+            type="number"
+            id="deltaBuffer"
+            [(ngModel)]="currentOptimization.deltaBuffer"
+            name="deltaBuffer"
+            required
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            #deltaBuffer="ngModel"
+            [class.error]="deltaBuffer.invalid && (deltaBuffer.dirty || deltaBuffer.touched)">
+          <div class="error-message" *ngIf="deltaBuffer.invalid && (deltaBuffer.dirty || deltaBuffer.touched)">
+            <span *ngIf="deltaBuffer.errors?.['required']">Буфер обязателен</span>
+            <span *ngIf="deltaBuffer.errors?.['min']">Значение должно быть положительным</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Комментарий -->
+      <div class="form-group">
+        <label for="comment">Комментарий</label>
+        <textarea
+          id="comment"
+          [(ngModel)]="currentOptimization.comment"
+          name="comment"
+          rows="3"
+          placeholder="Введите комментарий к оптимизации (опционально)"
+          #comment="ngModel"
+          [class.error]="comment.invalid && (comment.dirty || comment.touched)">
+        </textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="optimizationForm.invalid">
+          {{ editingOptimization ? 'Сохранить изменения' : 'Запустить оптимизацию' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

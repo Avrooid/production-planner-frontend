@@ -2,13 +2,16 @@ import {Component, OnInit} from '@angular/core';
 import {AlertService} from "../../service/alert-service";
 import {ProductionSessionService} from "../../service/http/production-session-service";
 import {ProductionSessionDto} from "../../domain/production-session/production-session-dto";
-import {faClock, faEdit, faPlus, faSearch, faTrash, faXmark} from "@fortawesome/free-solid-svg-icons";
+import {faCalculator, faClock, faEdit, faPlus, faSearch, faTrash, faXmark} from "@fortawesome/free-solid-svg-icons";
 import {SessionOrderDto} from "../../domain/production-session/session-order-dto";
 import {ProductDto} from "../../domain/products/product-dto";
 import {ProductService} from "../../service/http/product-service";
 import {SessionOrderDetails} from "../../domain/production-session/session-order-details";
 import {ProductionSessionDetails} from "../../domain/production-session/production-session-details";
 import {forkJoin} from "rxjs";
+import {OptimizationRunDetails} from "../../domain/optimization/optimization-run-details";
+import {OptimizationService} from "../../service/http/optimization-service";
+import {OptimizationRunDto} from "../../domain/optimization/optimization-run-dto";
 
 @Component({
   selector: 'app-sessions',
@@ -23,12 +26,19 @@ export class SessionsComponent implements OnInit {
 
   products: ProductDto[] = [];
 
+  optimizations: OptimizationRunDto[] = [];
+  optimizationsBySession: OptimizationRunDto[] = [];
+  editingOptimization = false;
+  currentOptimizationId?: number;
+
   isLoading: boolean = false;
   isSearchFocused: boolean = false;
   searchQuery = '';
+  activeTab: 'orders' | 'optimization' = 'orders';
 
   isSessionModalOpen = false;
   isOrderModalOpen = false;
+  isOptimizationModalOpen = false;
   isDeleteSessionModalOpen = false;
   isDeleteOrderModalOpen = false;
   editingSession = false;
@@ -47,12 +57,26 @@ export class SessionsComponent implements OnInit {
     source: ''
   };
 
+  currentOptimization: OptimizationRunDetails = {
+    runTimestamp: this.getTodayDate(),
+    modelVersion: 'v1.0.0',
+    kTardyDefault: 1.0,
+    kUnder: 0.5,
+    kOver: 0.5,
+    alpha: 0.1,
+    beta: 0.1,
+    deltaBuffer: 0.05,
+    comment: '',
+    productionSessionId: -1
+  };
+
   sessionToDelete: ProductionSessionDto | null = null;
   orderToDelete: SessionOrderDto | null = null;
 
   constructor(private alertService: AlertService,
               private productionSessionService: ProductionSessionService,
-              private productService: ProductService) {
+              private productService: ProductService,
+              private optimizationService: OptimizationService) {
 
   }
 
@@ -61,14 +85,17 @@ export class SessionsComponent implements OnInit {
 
     forkJoin({
       sessions: this.productionSessionService.getAllProductionSessions(),
-      products: this.productService.getAllProducts()
+      products: this.productService.getAllProducts(),
+      optimizations: this.optimizationService.getActiveOptimizationRuns()
     }).subscribe({
-      next: ({ sessions, products }) => {
+      next: ({ sessions, products, optimizations }) => {
         this.productionSessions = sessions;
         this.products = products;
+        this.optimizations = optimizations;
 
         console.log('Сессии:', this.productionSessions);
         console.log('Изделия:', this.products);
+        console.log('Оптимизации:', this.optimizations);
 
         // Автовыбор первой сессии, если есть
         if (sessions.length > 0 && this.selectedSessionIndex === -1) {
@@ -101,6 +128,11 @@ export class SessionsComponent implements OnInit {
   selectSession(index: number) {
     this.selectedSessionIndex = index;
     this.selectedSession = this.productionSessions[index];
+    this.filterOptimizations();
+  }
+
+  private filterOptimizations() {
+    this.optimizationsBySession = this.optimizations.filter(opt => opt.productionSession.id === this.selectedSession?.id);
   }
 
   openAddSessionModal(): void {
@@ -352,4 +384,111 @@ export class SessionsComponent implements OnInit {
   protected readonly faEdit = faEdit;
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
+  protected readonly faCalculator = faCalculator;
+
+  openOptimizationModal(id: number, optimizationRunDto?: OptimizationRunDto) {
+    if (optimizationRunDto) {
+      // Режим редактирования
+      this.editingOptimization = true;
+      this.currentOptimizationId = optimizationRunDto.id;
+
+      // Заполняем форму данными из optimizationRunDto
+      this.currentOptimization = {
+        runTimestamp: optimizationRunDto.runTimestamp,
+        modelVersion: optimizationRunDto.modelVersion,
+        kTardyDefault: optimizationRunDto.kTardyDefault,
+        kUnder: optimizationRunDto.kUnder,
+        kOver: optimizationRunDto.kOver,
+        alpha: optimizationRunDto.alpha,
+        beta: optimizationRunDto.beta,
+        deltaBuffer: optimizationRunDto.deltaBuffer,
+        comment: optimizationRunDto.comment,
+        productionSessionId: optimizationRunDto.productionSession.id
+      };
+    } else {
+      // Режим создания
+      this.editingOptimization = false;
+      this.currentOptimizationId = undefined;
+      this.currentOptimization.productionSessionId = id;
+    }
+
+    this.isOptimizationModalOpen = true;
+  }
+
+  closeOptimizationModal(): void {
+    this.isOptimizationModalOpen = false;
+    this.resetForm();
+    this.editingOptimization = false;
+    this.currentOptimizationId = undefined;
+  }
+
+  runOptimization(): void {
+    const optimizationData: OptimizationRunDetails = {
+      runTimestamp: this.currentOptimization.runTimestamp,
+      modelVersion: this.currentOptimization.modelVersion,
+      kTardyDefault: this.currentOptimization.kTardyDefault,
+      kUnder: this.currentOptimization.kUnder,
+      kOver: this.currentOptimization.kOver,
+      alpha: this.currentOptimization.alpha,
+      beta: this.currentOptimization.beta,
+      deltaBuffer: this.currentOptimization.deltaBuffer,
+      comment: this.currentOptimization.comment || '',
+      productionSessionId: this.currentOptimization.productionSessionId
+    };
+
+    if (this.editingOptimization && this.currentOptimizationId) {
+      // Режим редактирования
+      this.optimizationService.updateOptimizationRun(this.currentOptimizationId, optimizationData).subscribe({
+        next: (updatedOptimization) => {
+          const index = this.optimizations.findIndex(opt => opt.id === updatedOptimization.id);
+          if (index !== -1) {
+            this.optimizations[index] = updatedOptimization;
+          }
+          this.filterOptimizations();
+          console.log('Оптимизация обновлена:', updatedOptimization);
+          this.alertService.success("Оптимизация обновлена");
+          this.closeOptimizationModal();
+        },
+        error: (error) => {
+          this.alertService.error("Ошибка при обновлении оптимизации");
+          this.closeOptimizationModal();
+        }
+      });
+    } else {
+      // Режим создания
+      this.optimizationService.createOptimizationRun(optimizationData).subscribe({
+        next: (createdOptimization) => {
+          this.optimizations.push(createdOptimization);
+          this.filterOptimizations();
+          console.log('Оптимизация создана:', createdOptimization);
+          this.alertService.success("Оптимизация создана");
+          this.closeOptimizationModal();
+        },
+        error: (error) => {
+          this.alertService.error("Ошибка при создании оптимизации");
+          this.closeOptimizationModal();
+        }
+      });
+    }
+  }
+
+  private resetForm(): void {
+    this.currentOptimization = {
+      runTimestamp: this.getTodayDate(),
+      modelVersion: 'v1.0.0',
+      kTardyDefault: 1.0,
+      kUnder: 0.5,
+      kOver: 0.5,
+      alpha: 0.1,
+      beta: 0.1,
+      deltaBuffer: 0.05,
+      comment: '',
+      productionSessionId: -1
+    };
+  }
+
+  private getTodayDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }
 }
