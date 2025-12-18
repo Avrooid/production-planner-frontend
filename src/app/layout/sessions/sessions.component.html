@@ -130,6 +130,7 @@
               <td>
                 <div class="actions">
                   <fa-icon class="edit-button" [icon]="faEdit" (click)="openOptimizationModal(selectedSession.id, optimization)"></fa-icon>
+                  <fa-icon class="edit-button" [icon]="faPlay" (click)="startOptimization(optimization.id)"></fa-icon>
                 </div>
               </td>
             </tr>
@@ -365,19 +366,19 @@
       <!-- Версия модели -->
       <div class="form-group">
         <label for="modelVersion">Версия модели</label>
-        <input
-          type="text"
+        <select
           id="modelVersion"
           [(ngModel)]="currentOptimization.modelVersion"
           name="modelVersion"
           required
-          minlength="1"
-          placeholder="Введите версию модели (например, v1.0.0)"
           #modelVersion="ngModel"
           [class.error]="modelVersion.invalid && (modelVersion.dirty || modelVersion.touched)">
+          <option value="" disabled selected>Выберите версию модели</option>
+          <option value="model-a">model-a</option>
+          <option value="model-b">model-b</option>
+        </select>
         <div class="error-message" *ngIf="modelVersion.invalid && (modelVersion.dirty || modelVersion.touched)">
-          <span *ngIf="modelVersion.errors?.['required']">Версия модели обязательна</span>
-          <span *ngIf="modelVersion.errors?.['minlength']">Введите версию модели</span>
+          <span *ngIf="modelVersion.errors?.['required']">Выберите версию модели</span>
         </div>
       </div>
 

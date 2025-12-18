@@ -2,7 +2,16 @@ import {Component, OnInit} from '@angular/core';
 import {AlertService} from "../../service/alert-service";
 import {ProductionSessionService} from "../../service/http/production-session-service";
 import {ProductionSessionDto} from "../../domain/production-session/production-session-dto";
-import {faCalculator, faClock, faEdit, faPlus, faSearch, faTrash, faXmark} from "@fortawesome/free-solid-svg-icons";
+import {
+  faCalculator,
+  faClock,
+  faEdit,
+  faPlay,
+  faPlus,
+  faSearch,
+  faTrash,
+  faXmark
+} from "@fortawesome/free-solid-svg-icons";
 import {SessionOrderDto} from "../../domain/production-session/session-order-dto";
 import {ProductDto} from "../../domain/products/product-dto";
 import {ProductService} from "../../service/http/product-service";
@@ -422,6 +431,19 @@ export class SessionsComponent implements OnInit {
     this.currentOptimizationId = undefined;
   }
 
+  startOptimization(id: number) {
+    this.optimizationService.optimize(id).subscribe({
+      next: value => {
+        this.alertService.success("Оптимизация успешно получена");
+        console.log('Результат оптимизации', value);
+      },
+      error: err => {
+        this.alertService.error("Ошибка в оптимизации");
+        console.log(err);
+      }
+    })
+  }
+
   runOptimization(): void {
     const optimizationData: OptimizationRunDetails = {
       runTimestamp: this.currentOptimization.runTimestamp,
@@ -491,4 +513,6 @@ export class SessionsComponent implements OnInit {
     const today = new Date();
     return today.toISOString().split('T')[0];
   }
+
+  protected readonly faPlay = faPlay;
 }
