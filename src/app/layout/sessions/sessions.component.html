@@ -42,14 +42,15 @@
           (click)="activeTab = 'optimization'">
           Оптимизация
         </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'optimizationResults'"
+          (click)="activeTab = 'optimizationResults'">
+          Результаты оптимизаций
+        </button>
       </div>
       <div *ngIf="activeTab === 'orders'">
         <div class="search-with-add">
-          <div class="search-container">
-            <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
-            <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" (input)="onSearchInput()" type="text" placeholder="Найти изделие"
-                   class="search-input">
-          </div>
           <button class="btn add-item-button" (click)="openAddOrderModal()">
             <fa-icon [icon]="faPlus"></fa-icon>
             <fa-icon [icon]="faClock" style="margin-left: 5px;"></fa-icon>
@@ -76,7 +77,7 @@
                 {{ sessionOrder.productionType === 'SERIAL' ? 'Серийное' : 'Несирийное' }}
               </span>
               </td>
-              <td>{{ sessionOrder.quantity }}</td>
+              <td>{{ getDisplayQuantity(sessionOrder) }}</td>
               <td>{{ sessionOrder.deadlineDate }}</td>
               <td>
                 <div class="actions">
@@ -89,11 +90,6 @@
       </div>
       <div *ngIf="activeTab === 'optimization'">
         <div class="search-with-add">
-          <div class="search-container">
-            <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
-            <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" (input)="onSearchInput()" type="text" placeholder="Найти изделие"
-                   class="search-input">
-          </div>
           <button class="btn add-item-button" (click)="openOptimizationModal(selectedSession.id)">
             <fa-icon [icon]="faPlus"></fa-icon>
             <fa-icon [icon]="faCalculator" style="margin-left: 5px;"></fa-icon>
@@ -106,13 +102,13 @@
             <tr>
               <th>Дата</th>
               <th>Версия модели</th>
-              <th>kTardyDefault</th>
-              <th>kUnder</th>
-              <th>kOver</th>
-              <th>alpha</th>
-              <th>beta</th>
-              <th>deltaBuffer</th>
-              <th>comment</th>
+              <th>kTD</th>
+              <th>kU</th>
+              <th>kO</th>
+              <th>α</th>
+              <th>β</th>
+              <th>δ</th>
+              <th>Комментарий</th>
               <th></th>
             </tr>
             </thead>
@@ -120,9 +116,9 @@
             <tr *ngFor="let optimization of optimizationsBySession">
               <td>{{ optimization.runTimestamp }}</td>
               <td>{{ optimization.modelVersion }}</td>
-              <td>{{ optimization.kTardyDefault }}</td>
-              <td>{{ optimization.kUnder }}</td>
-              <td>{{ optimization.kOver }}</td>
+              <td>{{ optimization.tardyDefaultK }}</td>
+              <td>{{ optimization.underK }}</td>
+              <td>{{ optimization.overK }}</td>
               <td>{{ optimization.alpha }}</td>
               <td>{{ optimization.beta }}</td>
               <td>{{ optimization.deltaBuffer }}</td>
@@ -130,7 +126,33 @@
               <td>
                 <div class="actions">
                   <fa-icon class="edit-button" [icon]="faEdit" (click)="openOptimizationModal(selectedSession.id, optimization)"></fa-icon>
-                  <fa-icon class="edit-button" [icon]="faPlay" (click)="startOptimization(optimization.id)"></fa-icon>
+                  <fa-icon class="edit-button" [icon]="faPlay" (click)="openEmployeeStatusModal(optimization.id)"></fa-icon>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div *ngIf="activeTab === 'optimizationResults'">
+        <div class="table-container">
+          <table class="items-table">
+            <thead>
+            <tr>
+              <th>Дата выполения</th>
+              <th>Общие часы</th>
+              <th>Общее кол-во</th>
+              <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let optimizationResult of combinedOptimizations">
+              <td>{{ optimizationResult.workDate }}</td>
+              <td>{{ optimizationResult.totalHours }}</td>
+              <td>{{ optimizationResult.totalQuantity }}</td>
+              <td>
+                <div class="actions">
+                  <fa-icon class="edit-button" [icon]="faEye" (click)="openOptimizationResultModal(optimizationResult)"></fa-icon>
                 </div>
               </td>
             </tr>
@@ -532,5 +554,513 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+
+
+<!-- Модальное окно -->
+<!-- optimization-grouped-modal.component.html -->
+<div *ngIf="selectedOptimizationCombined" class="opt-result-modal-overlay" (click)="closeOptimizationResultModal()">
+  <div class="opt-result-modal-content" (click)="$event.stopPropagation()">
+
+    <!-- Заголовок модального окна -->
+    <div class="opt-result-modal-header">
+      <h2 class="opt-result-modal-title">
+        Оптимизация на {{ selectedOptimizationCombined.workDate | date:'dd.MM.yyyy' }}
+      </h2>
+      <button class="opt-result-modal-close" (click)="closeOptimizationResultModal()">&times;</button>
+    </div>
+
+    <!-- Тело модального окна -->
+    <div class="opt-result-modal-body">
+
+      <!-- Первая строка: Общая информация -->
+      <div class="full-width-section">
+        <div class="info-card rounded-card summary-card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-right: 10px;">Сводная информация</h3>
+            <fa-icon [icon]="faChartPie" style="color: gray; font-size: 20px;"></fa-icon>
+          </div>
+          <div class="card-content">
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Дата работы:</span>
+                <span class="summary-value highlight">{{ selectedOptimizationCombined.workDate | date:'dd.MM.yyyy' }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Общее количество:</span>
+                <span class="summary-value highlight">{{ selectedOptimizationCombined.totalQuantity | number:'1.2-2' }} шт</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Общие часы:</span>
+                <span class="summary-value highlight">{{ selectedOptimizationCombined.totalHours | number:'1.2-2' }} ч</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Количество бригад:</span>
+                <span class="summary-value highlight">{{ selectedOptimizationCombined.teamsDayWork.length }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Количество заказов:</span>
+                <span class="summary-value highlight">{{ selectedOptimizationCombined.sessionOrders.length }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Средняя производительность:</span>
+                <span class="summary-value highlight">
+                  {{ selectedOptimizationCombined.totalQuantity / selectedOptimizationCombined.totalHours | number:'1.2-2' }} шт/ч
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Вторая строка: Работы бригад -->
+      <div class="full-width-section">
+        <div class="info-card rounded-card teams-card">
+          <div class="card-header">
+            <h3 class="card-title">Работы бригад ({{ selectedOptimizationCombined.teamsDayWork.length }})</h3>
+          </div>
+          <div class="card-content">
+
+            <div class="teams-container">
+              <div *ngFor="let teamWork of selectedOptimizationCombined.teamsDayWork"
+                   class="team-accordion-item">
+
+                <!-- Заголовок аккордеона бригады -->
+                <div class="accordion-header team-header"
+                     [class.expanded]="expandedTeamId === teamWork.team.id"
+                     (click)="toggleTeamDetails(teamWork.team.id, teamWork)">
+                  <div class="team-header-content">
+                    <!-- Основная информация о бригаде -->
+                    <div class="team-main-info">
+                      <span class="team-name">{{ teamWork.team.name }}</span>
+                      <span class="team-type">{{ getTeamTypeLabel(teamWork.team.teamType) }}</span>
+                    </div>
+
+                    <!-- Статистика бригады -->
+                    <div class="team-stats">
+                      <span class="team-stat">
+                        <span class="stat-label">Сотрудники:</span>
+                        <span class="stat-value">{{ teamWork.team.employeeCount }}</span>
+                      </span>
+                      <span class="team-stat">
+                        <span class="stat-label">Макс. часов/день:</span>
+                        <span class="stat-value">{{ teamWork.team.maxDailyHours }}</span>
+                      </span>
+                      <span class="team-stat">
+                        <span class="stat-label">Работ:</span>
+                        <span class="stat-value">{{ teamWork.ordersWork.length }}</span>
+                      </span>
+                      <span class="team-stat">
+                        <span class="stat-label">Всего часов:</span>
+                        <span class="stat-value">
+                          {{ getTeamTotalHours(teamWork) | number:'1.2-2' }} ч
+                        </span>
+                      </span>
+                      <span class="team-stat">
+                        <span class="stat-label">Всего продукции:</span>
+                        <span class="stat-value">
+                          {{ getTeamTotalQuantity(teamWork) | number:'1.2-2' }} шт
+                        </span>
+                      </span>
+                    </div>
+
+                    <!-- Статус бригады -->
+                    <div class="team-status">
+                      <span class="status-badge" [class.active]="teamWork.team.active">
+                        {{ teamWork.team.active ? 'Активна' : 'Неактивна' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="accordion-icon">
+                    <fa-icon [icon]="expandedTeamId === teamWork.team.id ? faChevronUp : faChevronDown"></fa-icon>
+                  </div>
+                </div>
+
+                <!-- Контент аккордеона бригады -->
+                <div *ngIf="expandedTeamId === teamWork.team.id" class="accordion-content team-content">
+                  <!-- Детальная информация о бригаде -->
+                  <div class="team-details-grid">
+                    <div class="team-info-column">
+                      <h5 class="details-subtitle">Информация о бригаде</h5>
+                      <div class="info-row">
+                        <span class="info-label">Название:</span>
+                        <span class="info-value">{{ teamWork.team.name }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Тип команды:</span>
+                        <span class="info-value">{{ getTeamTypeLabel(teamWork.team.teamType) }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Количество сотрудников:</span>
+                        <span class="info-value">{{ teamWork.team.employeeCount }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Месячные часы:</span>
+                        <span class="info-value">{{ teamWork.team.monthlyHours }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Макс. часов в день:</span>
+                        <span class="info-value">{{ teamWork.team.maxDailyHours }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Статус:</span>
+                        <span class="info-value">
+                          <span class="status-badge" [class.active]="teamWork.team.active">
+                            {{ teamWork.team.active ? 'Активна' : 'Неактивна' }}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="team-stats-column">
+                      <h5 class="details-subtitle">Статистика работ</h5>
+                      <div class="info-row">
+                        <span class="info-label">Всего работ:</span>
+                        <span class="info-value">{{ teamWork.ordersWork.length }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Всего часов:</span>
+                        <span class="info-value">{{ getTeamTotalHours(teamWork) | number:'1.2-2' }} ч</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Всего продукции:</span>
+                        <span class="info-value">{{ getTeamTotalQuantity(teamWork) | number:'1.2-2' }} шт</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Средняя производительность:</span>
+                        <span class="info-value">
+                          {{ getTeamTotalQuantity(teamWork) / getTeamTotalHours(teamWork) | number:'1.2-2' }} шт/ч
+                        </span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Уникальных продуктов:</span>
+                        <span class="info-value">{{ getUniqueProductsCount(teamWork) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Таблица работ бригады -->
+                  <div class="team-works-table">
+                    <h5 class="details-subtitle">Детализация работ</h5>
+                    <div class="table-container">
+                      <table class="works-table">
+                        <thead>
+                        <tr>
+                          <th>Продукт</th>
+                          <th>Тип производства</th>
+                          <th>Индекс дня</th>
+                          <th>Запланированные часы</th>
+                          <th>Запланированное количество</th>
+                          <th>Производительность (шт/ч)</th>
+                          <th>Дата работы</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr *ngFor="let work of teamWork.ordersWork">
+                          <td class="product-cell">
+                            <div class="product-info">
+                              <span class="product-name">{{ work.product.name }}</span>
+                              <span *ngIf="work.product.assemblyProductivity" class="product-productivity">
+                                  ({{ work.product.assemblyProductivity }} шт/ч)
+                                </span>
+                            </div>
+                          </td>
+                          <td>{{ getProductionTypeLabel(work.productionType) }}</td>
+                          <td>{{ work.dayIndex }}</td>
+                          <td>{{ work.plannedHours | number:'1.2-2' }} ч</td>
+                          <td>{{ work.plannedQuantity | number:'1.2-2' }} шт</td>
+                          <td>{{ work.plannedQuantity / work.plannedHours | number:'1.2-2' }} шт/ч</td>
+                          <td>{{ work.workDate | date:'dd.MM.yyyy' }}</td>
+                        </tr>
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                          <td><strong>Итого:</strong></td>
+                          <td></td>
+                          <td></td>
+                          <td><strong>{{ getTeamTotalHours(teamWork) | number:'1.2-2' }} ч</strong></td>
+                          <td><strong>{{ getTeamTotalQuantity(teamWork) | number:'1.2-2' }} шт</strong></td>
+                          <td>
+                            <strong>
+                              {{ getTeamTotalQuantity(teamWork) / getTeamTotalHours(teamWork) | number:'1.2-2' }} шт/ч
+                            </strong>
+                          </td>
+                          <td></td>
+                        </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Третья строка: Заказы сессии (остается как было, но адаптировано) -->
+      <div class="full-width-section">
+        <div class="info-card rounded-card session-card">
+          <div class="card-header">
+            <h3 class="card-title">Заказы сессии производства ({{ selectedOptimizationCombined.sessionOrders.length }})</h3>
+          </div>
+          <div class="card-content">
+            <!-- Заказы в сессии -->
+            <div class="session-orders-section">
+              <div class="orders-container">
+                <div *ngFor="let order of selectedOptimizationCombined.sessionOrders"
+                     class="order-accordion-item">
+
+                  <!-- Заголовок аккордеона заказа -->
+                  <div class="accordion-header order-header"
+                       [class.expanded]="expandedOrderId === order.id"
+                       (click)="toggleOrderDetails(order.id)">
+                    <div class="order-header-content">
+                      <div class="order-main-info">
+                        <span class="order-id">Заказ #{{ order.id }}</span>
+                        <span class="order-product">{{ order.product.name }}</span>
+                      </div>
+                      <div class="order-secondary-info">
+                        <span class="order-quantity">План: {{ order.quantity }} шт</span>
+                        <span *ngIf="order.quantityFact !== null" class="order-quantity-fact">
+                          Факт: {{ order.quantityFact }} шт
+                        </span>
+                        <span class="order-deadline">Дедлайн: {{ order.deadlineDate | date:'dd.MM.yyyy' }}</span>
+                        <span class="order-type">Тип: {{ getProductionTypeLabel(order.productionType) }}</span>
+                      </div>
+                    </div>
+                    <div class="accordion-icon">
+                      <fa-icon [icon]="expandedOrderId === order.id ? faChevronUp : faChevronDown"></fa-icon>
+                    </div>
+                  </div>
+
+                  <!-- Контент аккордеона заказа -->
+                  <div *ngIf="expandedOrderId === order.id" class="accordion-content order-content">
+                    <div class="order-details-grid">
+                      <!-- Левая колонка: Информация о заказе -->
+                      <div class="order-details-column">
+                        <h5 class="details-subtitle">Информация о заказе</h5>
+                        <div class="info-row">
+                          <span class="info-label">ID:</span>
+                          <span class="info-value">{{ order.id }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Количество (план):</span>
+                          <span class="info-value">{{ order.quantity }} шт</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Количество (факт):</span>
+                          <span class="info-value">{{ order.quantityFact !== null ? order.quantityFact + ' шт' : 'Не указано' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Осталось:</span>
+                          <span class="info-value highlight">
+                            {{ order.quantityFact !== null ? (order.quantity - order.quantityFact) + ' шт' : 'Неизвестно' }}
+                          </span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Тип производства:</span>
+                          <span class="info-value">{{ getProductionTypeLabel(order.productionType) }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Дедлайн:</span>
+                          <span class="info-value">{{ order.deadlineDate | date:'dd.MM.yyyy' }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Источник:</span>
+                          <span class="info-value">{{ order.source }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Правая колонка: Информация о продукте -->
+                      <div class="order-details-column">
+                        <h5 class="details-subtitle">Информация о продукте</h5>
+                        <div class="info-row">
+                          <span class="info-label">Наименование:</span>
+                          <span class="info-value">{{ order.product.name }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Производительность сборки:</span>
+                          <span class="info-value">
+                            {{ order.product.assemblyProductivity || 'Не указана' }}
+                            <span *ngIf="order.product.assemblyProductivity">шт/ч</span>
+                          </span>
+                        </div>
+                        <div class="info-row">
+                          <span class="info-label">Статус:</span>
+                          <span class="info-value">
+                            <span class="status-badge" [class.active]="order.product.active">
+                              {{ order.product.active ? 'Активен' : 'Неактивен' }}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Бригады, работающие над этим заказом (опционально) -->
+                    <div *ngIf="getTeamsWorkingOnOrder(order)" class="order-teams-info">
+                      <h5 class="details-subtitle">Бригады, работающие над этим заказом</h5>
+                      <div class="teams-chips">
+                        <span *ngFor="let team of getTeamsWorkingOnOrder(order)" class="team-chip">
+                          {{ team.team.name }} ({{ team.totalQuantity | number:'1.2-2' }} шт)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showEmployeeStatusModal" class="employee-status-modal-overlay" (click)="closeEmployeeStatusModal()">
+  <div class="employee-status-modal-content" (click)="$event.stopPropagation()">
+
+    <!-- Заголовок модального окна -->
+    <div class="employee-status-modal-header">
+      <h2 class="employee-status-modal-title">
+        <fa-icon [icon]="faUsers" style="margin-right: 10px; color: gray;"></fa-icon>
+        Отметить отсутствующих сотрудников
+      </h2>
+      <button class="employee-status-modal-close" (click)="closeEmployeeStatusModal()">&times;</button>
+    </div>
+
+    <!-- Тело модального окна -->
+    <div class="employee-status-modal-body">
+
+      <!-- Статистика -->
+      <div class="statistics-row">
+        <div class="statistic-card">
+          <div class="statistic-label">Всего команд</div>
+          <div class="statistic-value">{{ teamsWithEmployees?.length || 0 }}</div>
+        </div>
+        <div class="statistic-card">
+          <div class="statistic-label">Всего сотрудников</div>
+          <div class="statistic-value">{{ getTotalEmployeesCount() }}</div>
+        </div>
+        <div class="statistic-card">
+          <div class="statistic-label">Работают</div>
+          <div class="statistic-value working">{{ getWorkingCount() }}</div>
+        </div>
+        <div class="statistic-card">
+          <div class="statistic-label">Отсутствуют</div>
+          <div class="statistic-value absent">{{ getAbsentCount() }}</div>
+        </div>
+      </div>
+
+      <!-- Список команд -->
+      <div class="teams-list">
+        <div *ngFor="let teamData of teamsWithEmployees" class="team-item">
+
+          <!-- Заголовок команды -->
+          <div class="team-header" (click)="toggleTeam(teamData.team.id)">
+            <div class="team-header-left">
+              <div class="team-name">{{ teamData.team.name }}</div>
+              <div class="team-info">
+                <span class="team-type-badge" [ngClass]="teamData.team.teamType?.toLowerCase()">
+                  {{ teamData.team.teamType === 'PRODUCTION' ? 'Производство' : 'Сборка' }}
+                </span>
+                <span class="team-employee-count">
+                  <fa-icon [icon]="faUserFriends" style="margin-right: 4px;"></fa-icon>
+                  {{ teamData.employees.length }} сотрудников
+                </span>
+              </div>
+            </div>
+
+            <div class="team-header-right">
+              <div class="team-stats">
+                <span class="team-stat working">
+                  <fa-icon [icon]="faCheckCircle"></fa-icon>
+                  {{ getTeamWorkingCount(teamData) }}
+                </span>
+                <span class="team-stat absent">
+                  <fa-icon [icon]="faUserTimes"></fa-icon>
+                  {{ getTeamAbsentCount(teamData) }}
+                </span>
+              </div>
+              <div class="team-arrow">
+                <fa-icon [icon]="expandedStatusTeamId === teamData.team.id ? faChevronUp : faChevronDown"></fa-icon>
+              </div>
+            </div>
+          </div>
+
+          <!-- Список сотрудников команды (раскрывается) -->
+          <div *ngIf="expandedStatusTeamId === teamData.team.id" class="team-employees">
+            <div class="employees-table-header">
+              <div class="employee-name-header">Сотрудник</div>
+              <div class="employee-status-header">Статус</div>
+            </div>
+
+            <div *ngFor="let employee of teamData.employees" class="employee-row">
+              <div class="employee-info">
+                <div class="employee-name">{{ employee.fullName }}</div>
+                <div class="employee-details">
+                  <span class="employee-position">{{ employee.position }}</span>
+                  <span class="employee-qualification" *ngIf="employee.qualification">
+                    Квалификация: {{ employee.qualification }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="employee-actions">
+                <div class="status-buttons">
+                  <button class="status-btn working-btn"
+                          [class.active]="employee.status === 'WORKING' || !employee.status"
+                          (click)="setEmployeeStatus(employee, 'WORKING')"
+                          title="Работает">
+                    <fa-icon [icon]="faCheckCircle" style="color: gray;"></fa-icon>
+                    <span class="btn-text">Работает</span>
+                  </button>
+
+                  <button class="status-btn absent-btn day-off"
+                          [class.active]="employee.status === 'DAY_OFF'"
+                          (click)="setEmployeeStatus(employee, 'DAY_OFF')"
+                          title="Отгул">
+                    <fa-icon [icon]="faCalendarAlt" style="color: gray;"></fa-icon>
+                    <span class="btn-text">Отгул</span>
+                  </button>
+
+                  <button class="status-btn absent-btn sick"
+                          [class.active]="employee.status === 'SICK'"
+                          (click)="setEmployeeStatus(employee, 'SICK')"
+                          title="Болезнь">
+                    <fa-icon [icon]="faHospital" style="color: gray;"></fa-icon>
+                    <span class="btn-text">Болезнь</span>
+                  </button>
+                </div>
+
+                <div class="current-status" [ngClass]="getStatusClass(employee)">
+                  {{ getStatusText(employee) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Футер модального окна -->
+    <div class="employee-status-modal-footer">
+      <div class="footer-left">
+        <button class="btn btn-cancel" (click)="resetAllStatuses()">
+          <fa-icon [icon]="faUndo"></fa-icon>
+          Сбросить все
+        </button>
+      </div>
+
+      <div class="footer-right">
+        <button class="btn btn-primary"
+                (click)="startOptimizationWithAbsences()">
+          <fa-icon [icon]="faPlay"></fa-icon>
+          Запустить оптимизацию
+        </button>
+      </div>
+    </div>
   </div>
 </div>

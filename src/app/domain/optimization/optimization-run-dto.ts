@@ -4,9 +4,9 @@ export interface OptimizationRunDto {
   id: number;
   runTimestamp: string;
   modelVersion: string;
-  kTardyDefault: number;
-  kUnder: number;
-  kOver: number;
+  tardyDefaultK: number;
+  underK: number;
+  overK: number;
   alpha: number;
   beta: number;
   deltaBuffer: number;

@@ -3,13 +3,13 @@ import {AlertService} from "../../service/alert-service";
 import {ProductionSessionService} from "../../service/http/production-session-service";
 import {ProductionSessionDto} from "../../domain/production-session/production-session-dto";
 import {
-  faCalculator,
+  faCalculator, faCalendar, faCalendarAlt, faChartPie, faCheckCircle, faChevronDown, faChevronUp, faCircleInfo,
   faClock,
-  faEdit,
+  faEdit, faEye, faHospital,
   faPlay,
   faPlus,
-  faSearch,
-  faTrash,
+  faSearch, faTimes,
+  faTrash, faUndo, faUserFriends, faUsers, faUserTimes,
   faXmark
 } from "@fortawesome/free-solid-svg-icons";
 import {SessionOrderDto} from "../../domain/production-session/session-order-dto";
@@ -21,6 +21,22 @@ import {forkJoin} from "rxjs";
 import {OptimizationRunDetails} from "../../domain/optimization/optimization-run-details";
 import {OptimizationService} from "../../service/http/optimization-service";
 import {OptimizationRunDto} from "../../domain/optimization/optimization-run-dto";
+import {OptimizationResultDto} from "../../domain/optimization/optimization-result-dto";
+import {TeamDayWork} from "../../domain/optimization/team-day-work";
+import {OrderWork} from "../../domain/optimization/order-work";
+import {OptimizationCombined} from "../../domain/optimization/optimization-combined";
+import {EmployeeDto} from "../../domain/employees/employee-dto";
+import {EmployeeService} from "../../service/http/employee-service";
+import {TeamDto} from "../../domain/teams/team-dto";
+
+interface TeamWithEmployees {
+  team: TeamDto;
+  employees: EmployeeWithStatus[];
+}
+
+interface EmployeeWithStatus extends EmployeeDto {
+  status: 'WORKING' | 'DAY_OFF' | 'SICK';
+}
 
 @Component({
   selector: 'app-sessions',
@@ -39,11 +55,26 @@ export class SessionsComponent implements OnInit {
   optimizationsBySession: OptimizationRunDto[] = [];
   editingOptimization = false;
   currentOptimizationId?: number;
+  combinedOptimizations: OptimizationCombined[] = []
+  selectedOptimizationCombined: OptimizationCombined | null = null;
+
+  optimizationResults: OptimizationResultDto[] = [];
+  optimizationResultsBySession: OptimizationResultDto[] = [];
+  selectedOptimizationResult: OptimizationResultDto | null = null;
+  expandedTeamId: number | null = null;
+  expandedOrderId: number | null = null;
+  private teamStatsCache = new Map<number, { totalHours: number; totalQuantity: number }>();
+
+  employees: EmployeeDto[] = [];
+  teamsWithEmployees: TeamWithEmployees[] = [];
+  expandedStatusTeamId: number | null = null;
+  showEmployeeStatusModal = false;
+  currentOptimizationIdForRunOptimization:  number | null = null;
 
   isLoading: boolean = false;
   isSearchFocused: boolean = false;
   searchQuery = '';
-  activeTab: 'orders' | 'optimization' = 'orders';
+  activeTab: 'orders' | 'optimization' | 'optimizationResults' = 'orders';
 
   isSessionModalOpen = false;
   isOrderModalOpen = false;
@@ -85,6 +116,7 @@ export class SessionsComponent implements OnInit {
   constructor(private alertService: AlertService,
               private productionSessionService: ProductionSessionService,
               private productService: ProductService,
+              private employeeService: EmployeeService,
               private optimizationService: OptimizationService) {
 
   }
@@ -95,16 +127,26 @@ export class SessionsComponent implements OnInit {
     forkJoin({
       sessions: this.productionSessionService.getAllProductionSessions(),
       products: this.productService.getAllProducts(),
-      optimizations: this.optimizationService.getActiveOptimizationRuns()
+      optimizations: this.optimizationService.getActiveOptimizationRuns(),
+      optimizationResults: this.optimizationService.getOptimizationResults(),
+      employees: this.employeeService.getEmployees()
     }).subscribe({
-      next: ({ sessions, products, optimizations }) => {
+      next: ({ sessions,
+               products,
+               optimizations,
+               optimizationResults,
+               employees}) => {
         this.productionSessions = sessions;
         this.products = products;
         this.optimizations = optimizations;
+        this.optimizationResults = optimizationResults;
+        this.employees = employees;
 
         console.log('Сессии:', this.productionSessions);
         console.log('Изделия:', this.products);
         console.log('Оптимизации:', this.optimizations);
+        console.log('Результаты оптимизаций:', this.optimizationResults);
+        console.log('Сотрудники:', this.employees)
 
         // Автовыбор первой сессии, если есть
         if (sessions.length > 0 && this.selectedSessionIndex === -1) {
@@ -138,10 +180,108 @@ export class SessionsComponent implements OnInit {
     this.selectedSessionIndex = index;
     this.selectedSession = this.productionSessions[index];
     this.filterOptimizations();
+    this.filterOptimizationsResults();
   }
 
   private filterOptimizations() {
     this.optimizationsBySession = this.optimizations.filter(opt => opt.productionSession.id === this.selectedSession?.id);
+  }
+
+  combineOptimizations(): OptimizationCombined[] {
+    const optimizationsByDate = new Map<string, OptimizationResultDto[]>();
+    const result: OptimizationCombined[] = [];
+
+    // 1. Группируем оптимизации по workDate
+    this.optimizationResultsBySession.forEach(optimization => {
+      const workDate = optimization.workDate;
+
+      if (workDate) {
+        if (!optimizationsByDate.has(workDate)) {
+          optimizationsByDate.set(workDate, []);
+        }
+        optimizationsByDate.get(workDate)!.push(optimization);
+      }
+    });
+
+    // 2. Для каждой даты создаем OptimizationCombined объект
+    optimizationsByDate.forEach((optimizations, workDate) => {
+      // 3. Группируем по командам
+      const teamsDayWork = this.combineByTeam(optimizations);
+
+      // 4. Получаем sessionOrders (берем из первой оптимизации)
+      const sessionOrders = optimizations.length > 0
+        ? optimizations[0].productionSession?.sessionOrders || []
+        : [];
+
+      // 5. Вычисляем totalQuantity и totalHours
+      let totalQuantity = 0;
+      let totalHours = 0;
+
+      // Суммируем по всем оптимизациям
+      optimizations.forEach(optimization => {
+        totalHours += optimization.plannedHours || 0;
+        totalQuantity += optimization.plannedQuantity || 0;
+      });
+
+      // 6. Создаем объект OptimizationCombined
+      const combined: OptimizationCombined = {
+        sessionOrders,
+        teamsDayWork,
+        workDate,
+        totalQuantity,
+        totalHours
+      };
+
+      result.push(combined);
+    });
+
+    // 7. Сортируем по дате (от старых к новым)
+    this.combinedOptimizations = result;
+    console.log('Скомбинированные: ', this.combinedOptimizations);
+    return result.sort((a, b) => a.workDate.localeCompare(b.workDate));
+  }
+
+  combineByTeam(optimizations: OptimizationResultDto[]): TeamDayWork[] {
+    const teamsDayWork: TeamDayWork[] = [];
+
+    // Создаем Map для быстрого поиска команды
+    const teamWorkMap = new Map<number, TeamDayWork>();
+
+    optimizations.forEach(optimization => {
+      const teamId = optimization.team.id;
+
+      // Создаем объект OrderWork
+      const orderWork: OrderWork = {
+        product: optimization.product,
+        plannedHours: optimization.plannedHours,
+        plannedQuantity: optimization.plannedQuantity,
+        workDate: optimization.workDate,
+        productionType: optimization.productionType,
+        dayIndex: optimization.dayIndex
+      };
+
+      // Проверяем, есть ли уже запись для этой команды
+      if (teamWorkMap.has(teamId)) {
+        // Добавляем OrderWork к существующей команде
+        const existingTeamWork = teamWorkMap.get(teamId)!;
+        existingTeamWork.ordersWork.push(orderWork);
+      } else {
+        // Создаем новую запись для команды
+        const newTeamWork: TeamDayWork = {
+          team: optimization.team,
+          ordersWork: [orderWork]
+        };
+        teamsDayWork.push(newTeamWork);
+        teamWorkMap.set(teamId, newTeamWork);
+      }
+    });
+
+    return teamsDayWork;
+  }
+
+  private filterOptimizationsResults() {
+    this.optimizationResultsBySession = this.optimizationResults.filter(opt => opt.productionSession.id === this.selectedSession?.id);
+    this.combineOptimizations();
   }
 
   openAddSessionModal(): void {
@@ -405,9 +545,9 @@ export class SessionsComponent implements OnInit {
       this.currentOptimization = {
         runTimestamp: optimizationRunDto.runTimestamp,
         modelVersion: optimizationRunDto.modelVersion,
-        kTardyDefault: optimizationRunDto.kTardyDefault,
-        kUnder: optimizationRunDto.kUnder,
-        kOver: optimizationRunDto.kOver,
+        kTardyDefault: optimizationRunDto.tardyDefaultK,
+        kUnder: optimizationRunDto.underK,
+        kOver: optimizationRunDto.overK,
         alpha: optimizationRunDto.alpha,
         beta: optimizationRunDto.beta,
         deltaBuffer: optimizationRunDto.deltaBuffer,
@@ -429,19 +569,6 @@ export class SessionsComponent implements OnInit {
     this.resetForm();
     this.editingOptimization = false;
     this.currentOptimizationId = undefined;
-  }
-
-  startOptimization(id: number) {
-    this.optimizationService.optimize(id).subscribe({
-      next: value => {
-        this.alertService.success("Оптимизация успешно получена");
-        console.log('Результат оптимизации', value);
-      },
-      error: err => {
-        this.alertService.error("Ошибка в оптимизации");
-        console.log(err);
-      }
-    })
   }
 
   runOptimization(): void {
@@ -515,4 +642,275 @@ export class SessionsComponent implements OnInit {
   }
 
   protected readonly faPlay = faPlay;
+  protected readonly faCalendar = faCalendar;
+  protected readonly faEye = faEye;
+
+  openOptimizationResultModal(optimizationResult: OptimizationCombined) {
+    this.selectedOptimizationCombined = optimizationResult;
+    this.expandedOrderId = null;
+  }
+
+  closeOptimizationResultModal() {
+    this.selectedOptimizationCombined = null;
+    this.expandedOrderId = null;
+  }
+
+  toggleTeamDetails(teamId: number, teamWork: TeamDayWork) {
+    if (this.expandedTeamId === teamId) {
+      this.expandedTeamId = null;
+    } else {
+      this.expandedTeamId = teamId;
+      // Предварительно вычисляем статистику для быстрого доступа
+      this.calculateTeamStats(teamWork);
+    }
+  }
+
+  toggleOrderDetails(orderId: number) {
+    if (this.expandedOrderId === orderId) {
+      this.expandedOrderId = null;
+    } else {
+      this.expandedOrderId = orderId;
+    }
+  }
+
+  // Вспомогательные методы для расчета статистики
+  getTeamTotalHours(teamWork: TeamDayWork): number {
+    if (this.teamStatsCache.has(teamWork.team.id)) {
+      return this.teamStatsCache.get(teamWork.team.id)!.totalHours;
+    }
+    return this.calculateTeamStats(teamWork).totalHours;
+  }
+
+  getTeamTotalQuantity(teamWork: TeamDayWork): number {
+    if (this.teamStatsCache.has(teamWork.team.id)) {
+      return this.teamStatsCache.get(teamWork.team.id)!.totalQuantity;
+    }
+    return this.calculateTeamStats(teamWork).totalQuantity;
+  }
+
+  private calculateTeamStats(teamWork: TeamDayWork): { totalHours: number; totalQuantity: number } {
+    const totalHours = teamWork.ordersWork.reduce((sum, work) => sum + work.plannedHours, 0);
+    const totalQuantity = teamWork.ordersWork.reduce((sum, work) => sum + work.plannedQuantity, 0);
+
+    const stats = { totalHours, totalQuantity };
+    this.teamStatsCache.set(teamWork.team.id, stats);
+
+    return stats;
+  }
+
+  getUniqueProductsCount(teamWork: TeamDayWork): number {
+    const productIds = new Set(teamWork.ordersWork.map(work => work.product.id));
+    return productIds.size;
+  }
+
+  getTeamsWorkingOnOrder(order: SessionOrderDto): Array<{team: any, totalQuantity: number}> {
+    if (!this.selectedOptimizationCombined) return [];
+
+    const result: Array<{team: any, totalQuantity: number}> = [];
+    const productId = order.product.id;
+
+    this.selectedOptimizationCombined.teamsDayWork.forEach(teamWork => {
+      // Фильтруем работы этой бригады по нужному продукту
+      const worksOnThisProduct = teamWork.ordersWork.filter(
+        work => work.product.id === productId
+      );
+
+      if (worksOnThisProduct.length > 0) {
+        const totalQuantity = worksOnThisProduct.reduce(
+          (sum, work) => sum + work.plannedQuantity, 0
+        );
+        result.push({
+          team: teamWork.team,
+          totalQuantity
+        });
+      }
+    });
+
+    return result;
+  }
+
+
+  getTeamTypeLabel(teamType: string): string {
+    const types: { [key: string]: string } = {
+      'PRODUCTION': 'Производственная',
+      'ASSEMBLY': 'Сборочная',
+      'PACKING': 'Упаковочная'
+    };
+    return types[teamType] || teamType;
+  }
+
+  getSessionStatusLabel(status: string): string {
+    const statuses: { [key: string]: string } = {
+      'draft': 'Черновик',
+      'active': 'Активна',
+      'completed': 'Завершена',
+      'cancelled': 'Отменена'
+    };
+    return statuses[status] || status;
+  }
+
+  getSessionStatusClass(status: string): string {
+    const classes: { [key: string]: string } = {
+      'draft': 'status-draft',
+      'active': 'status-active',
+      'completed': 'status-completed',
+      'cancelled': 'status-cancelled'
+    };
+    return classes[status] || '';
+  }
+
+
+
+  openEmployeeStatusModal(optimizationId: number) {
+    const optimization: OptimizationRunDto | undefined = this.optimizations.find(o => o.id === optimizationId);
+
+    if (optimization) {
+      // Проверяем, есть ли workDate этой optimization в combinedOptimizations
+      const workDateExists = this.combinedOptimizations.some(
+        combinedOpt => combinedOpt.workDate === optimization.runTimestamp
+      );
+
+      if (workDateExists) {
+        this.alertService.error("Результат оптимизации на эту дату уже существует")
+        return;
+      }
+    }
+
+
+    this.currentOptimizationIdForRunOptimization = optimizationId;
+    this.showEmployeeStatusModal = true;
+
+    // Сброс состояния
+    this.expandedStatusTeamId = null;
+    this.teamsWithEmployees = [];
+    this.groupEmployeesByTeam();
+  }
+
+  groupEmployeesByTeam() {
+    const teamsMap = new Map<number, TeamWithEmployees>();
+
+    this.employees.forEach(employee => {
+      if (!employee.team) return;
+
+      if (!teamsMap.has(employee.team.id)) {
+        teamsMap.set(employee.team.id, {
+          team: employee.team,
+          employees: []
+        });
+      }
+
+      teamsMap.get(employee.team.id)!.employees.push({
+        ...employee,
+        status: 'WORKING' // по умолчанию все работают
+      });
+    });
+
+    this.teamsWithEmployees = Array.from(teamsMap.values());
+  }
+
+  closeEmployeeStatusModal() {
+    this.showEmployeeStatusModal = false;
+    this.currentOptimizationIdForRunOptimization = null;
+    this.expandedStatusTeamId = null;
+    this.teamsWithEmployees = [];
+  }
+
+
+  toggleTeam(teamId: number) {
+    this.expandedStatusTeamId = this.expandedStatusTeamId === teamId ? null : teamId;
+  }
+
+  // 6. Установка статуса сотрудника
+  setEmployeeStatus(employee: EmployeeWithStatus, status: 'WORKING' | 'DAY_OFF' | 'SICK') {
+    employee.status = status;
+  }
+
+  // 7. Сброс всех статусов
+  resetAllStatuses() {
+    this.teamsWithEmployees.forEach(teamData => {
+      teamData.employees.forEach(employee => {
+        employee.status = 'WORKING';
+      });
+    });
+  }
+// Получение статистики
+  getTotalEmployeesCount(): number {
+    return this.teamsWithEmployees.reduce((sum, team) => sum + team.employees.length, 0);
+  }
+
+  getWorkingCount(): number {
+    return this.teamsWithEmployees.reduce((sum, team) =>
+      sum + team.employees.filter(e => e.status === 'WORKING').length, 0);
+  }
+
+  getAbsentCount(): number {
+    return this.getTotalEmployeesCount() - this.getWorkingCount();
+  }
+
+// Работа с отдельной командой
+  getTeamWorkingCount(teamData: TeamWithEmployees): number {
+    return teamData.employees.filter(e => e.status === 'WORKING').length;
+  }
+
+  getTeamAbsentCount(teamData: TeamWithEmployees): number {
+    return teamData.employees.length - this.getTeamWorkingCount(teamData);
+  }
+
+// Получение класса статуса
+  getStatusClass(employee: EmployeeWithStatus): string {
+    return employee.status.toLowerCase().replace('_', '-');
+  }
+
+// Получение текста статуса
+  getStatusText(employee: EmployeeWithStatus): string {
+    const statusMap = {
+      'WORKING': 'Работает',
+      'DAY_OFF': 'Отгул',
+      'SICK': 'Болезнь'
+    };
+    return statusMap[employee.status];
+  }
+
+// Запуск оптимизации с учетом отсутствующих
+  startOptimizationWithAbsences() {
+    const absenceCountByTeam = new Map<number, number>();
+
+    this.teamsWithEmployees.forEach(teamData => {
+      const absentCount = this.getTeamAbsentCount(teamData);
+      if (absentCount > 0) {
+        absenceCountByTeam.set(teamData.team.id, absentCount);
+      }
+    });
+
+    if (this.currentOptimizationIdForRunOptimization) {
+      this.optimizationService.optimize(this.currentOptimizationIdForRunOptimization, absenceCountByTeam)
+        .subscribe({
+          next: (result) => {
+            this.alertService.success('Оптимизация запущена');
+            this.closeEmployeeStatusModal();
+            window.location.reload();
+          },
+          error: (error) => {
+            this.alertService.error('Ошибка при запуске оптимизации');
+          }
+        });
+    }
+  }
+
+  protected readonly faChevronUp = faChevronUp;
+  protected readonly faChevronDown = faChevronDown;
+  protected readonly faUsers = faUsers;
+  protected readonly faCircleInfo = faCircleInfo;
+  protected readonly faChartPie = faChartPie;
+  protected readonly faUserFriends = faUserFriends;
+  protected readonly faCheckCircle = faCheckCircle;
+  protected readonly faUserTimes = faUserTimes;
+  protected readonly faCalendarAlt = faCalendarAlt;
+  protected readonly faHospital = faHospital;
+  protected readonly faUndo = faUndo;
+  protected readonly faTimes = faTimes;
+
+  getDisplayQuantity(sessionOrder: SessionOrderDto) {
+    return sessionOrder.quantityFact !== null ? sessionOrder.quantityFact : sessionOrder.quantity;
+  }
 }

@@ -14,6 +14,13 @@ export class OptimizationService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Получить результаты оптимизаций
+   */
+  getOptimizationResults(): Observable<OptimizationResultDto[]> {
+    return this.http.get<OptimizationResultDto[]>(`${this.apiUrl}/result`);
+  }
+
+  /**
    * Получить список активных параметров оптимизации
    */
   getActiveOptimizationRuns(): Observable<OptimizationRunDto[]> {
@@ -30,8 +37,8 @@ export class OptimizationService {
   /**
    * Данные нового параметра оптимизации
    */
-  optimize(optimizationRunId: number): Observable<OptimizationResultDto[]> {
-    return this.http.post<OptimizationResultDto[]>(`${this.apiUrl}/optimize/${optimizationRunId}`, {});
+  optimize(optimizationRunId: number, absenceCountByTeam: Map<number, number>): Observable<OptimizationResultDto[]> {
+    return this.http.post<OptimizationResultDto[]>(`${this.apiUrl}/optimize/${optimizationRunId}`, absenceCountByTeam);
   }
 
   /**

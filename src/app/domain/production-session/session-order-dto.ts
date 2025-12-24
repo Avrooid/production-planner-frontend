@@ -4,6 +4,7 @@ export interface SessionOrderDto {
   id: number;
   product: ProductDto;
   quantity: number;
+  quantityFact: number;
   productionType: string;
   deadlineDate: string | Date;
   source: string;

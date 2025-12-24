@@ -22,17 +22,6 @@
           <tr>
             <th>Название</th>
             <th>
-              <div class="sortable-header" style="display: flex;">
-                <span>Производительность сборки</span>
-                <div (click)="toggleSort('assemblyProductivity')" style="display: flex; flex-direction: column; margin-top: 4px; cursor: pointer;">
-                  <fa-icon class="sort-icon-up" [icon]="faSortUp"
-                           [class.active]="sortField === 'assemblyProductivity' && sortDirection === 'asc'"></fa-icon>
-                  <fa-icon class="sort-icon-down" [icon]="faSortDown"
-                           [class.active]="sortField === 'assemblyProductivity' && sortDirection === 'desc'"></fa-icon>
-                </div>
-              </div>
-            </th>
-            <th>
               <div class="filterable-header">
                 <span>Статус</span>
                 <fa-icon class="filter-icon" [icon]="faFilter"
@@ -62,14 +51,13 @@
           <tbody>
           <tr *ngFor="let product of filteredProducts">
             <td>{{ product.name }}</td>
-            <td>{{ product.assemblyProductivity }}</td>
             <td>
               <span class="status-badge" [class.active]="product.active" [class.inactive]="!product.active">
                 {{ product.active ? 'Активна' : 'Неактивна' }}
               </span>
             </td>
             <td>
-              <div class="actions">
+              <div class="actions" style="justify-content: end;">
                 <fa-icon class="edit-button" [icon]="faEdit" (click)="openEditModal(product)"></fa-icon>
                 <fa-icon class="delete-button" [icon]="faTrash" (click)="openDeleteModal(product)"></fa-icon>
               </div>
@@ -103,24 +91,6 @@
           [class.error]="name.invalid && (name.dirty || name.touched)">
         <div class="error-message" *ngIf="name.invalid && (name.dirty || name.touched)">
           Наименование обязательно
-        </div>
-      </div>
-
-      <!-- Производительность -->
-      <div class="form-group">
-        <input
-          type="number"
-          [(ngModel)]="currentProduct.assemblyProductivity"
-          name="assemblyProductivity"
-          min="0.01"
-          step="0.01"
-          required
-          placeholder="Производительность сборки"
-          #assemblyProductivity="ngModel"
-          [class.error]="assemblyProductivity.invalid && (assemblyProductivity.dirty || assemblyProductivity.touched)">
-        <div class="error-message" *ngIf="assemblyProductivity.invalid && (assemblyProductivity.dirty || assemblyProductivity.touched)">
-          <span *ngIf="assemblyProductivity.errors?.['required']">Производительность обязательна</span>
-          <span *ngIf="assemblyProductivity.errors?.['min']">Минимальная производительность: 0.01</span>
         </div>
       </div>
 

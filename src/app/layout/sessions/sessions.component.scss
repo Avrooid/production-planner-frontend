@@ -6,7 +6,6 @@
 
 /* Левая панель */
 .teams-list {
-  width: 300px;
   border-right: 1px solid #e0e0e0;
   padding-right: 20px;
   overflow-y: auto;
@@ -213,4 +212,971 @@ table {
   color: white;
   border-color: #007bff;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+
+
+
+.opt-result-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.opt-result-modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.opt-result-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.opt-result-modal-title {
+  margin: 0;
+  font-size: 24px;
+  color: #343a40;
+}
+
+.opt-result-modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #6c757d;
+  line-height: 1;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.opt-result-modal-close:hover {
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+.opt-result-modal-body {
+  padding: 24px;
+}
+/* Расположение колонок */
+.row-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.column-half {
+  flex: 1;
+  min-width: 0; /* Для корректного сжатия */
+}
+
+.full-width-section {
+  width: 100%;
+}
+
+/* Карточки */
+.rounded-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.info-card {
+  height: 100%;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 18px;
+  color: #343a40;
+  font-weight: 600;
+}
+
+.card-content {
+  padding: 20px;
+}
+
+.session-card .card-content {
+  padding: 24px;
+}
+
+/* Строки информации */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #6c757d;
+  margin-right: 10px;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #343a40;
+  text-align: right;
+}
+
+/* Информация о сессии */
+.session-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.session-info-item {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Бейджи статусов */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.status-badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.inactive {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-draft {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-planned {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-in-progress {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Аккордеон заказов */
+.session-orders-section {
+  margin-top: 20px;
+}
+
+.orders-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #343a40;
+}
+
+.orders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-accordion-item {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.accordion-header:hover {
+  background-color: #e9ecef;
+}
+
+.accordion-header.expanded {
+  background-color: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.order-header-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-main-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.order-id {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 16px;
+}
+
+.order-product {
+  font-weight: 600;
+  color: #343a40;
+  font-size: 16px;
+}
+
+.order-secondary-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.order-quantity,
+.order-deadline,
+.order-type {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.accordion-icon {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.accordion-content {
+  padding: 20px;
+  background-color: #fff;
+}
+
+.order-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.order-details-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.details-subtitle {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.summary-card .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #2196f3;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.summary-value.highlight {
+  color: #2196f3;
+  font-size: 18px;
+}
+
+/* Стили для бригад */
+.team-accordion-item {
+  margin-bottom: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.team-header {
+  background: #f5f7fa;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.team-header:hover {
+  background: #e8f4fd;
+}
+
+.team-header.expanded {
+  background: #e3f2fd;
+  border-bottom: 2px solid #2196f3;
+}
+
+.team-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.team-main-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 250px;
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.team-type {
+  font-size: 12px;
+  padding: 3px 8px;
+  background: #e0e0e0;
+  border-radius: 12px;
+  color: #666;
+}
+
+.team-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  flex: 1;
+}
+
+.team-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.team-status {
+  min-width: 100px;
+}
+
+/* Контент бригады */
+.team-content {
+  padding: 20px;
+  background: #fafafa;
+  border-top: 1px solid #e0e0e0;
+}
+
+.team-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.team-works-table {
+  margin-top: 20px;
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+.works-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.works-table th {
+  background: #e3f2fd;
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #1976d2;
+  border-bottom: 2px solid #bbdefb;
+  white-space: nowrap;
+}
+
+.works-table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.works-table tbody tr:hover {
+  background: #f1f8ff;
+}
+
+.works-table tfoot tr {
+  background: #e8f5e9;
+  font-weight: bold;
+}
+
+.works-table tfoot td {
+  border-top: 2px solid #c8e6c9;
+  color: #2e7d32;
+}
+
+.product-cell .product-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.product-productivity {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Заказы сессии */
+.order-accordion-item {
+  margin-bottom: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.order-header {
+  background: #f8f9fa;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.order-header.expanded {
+  background: #e3f2fd;
+  border-bottom: 1px solid #2196f3;
+}
+
+.order-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.order-main-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.order-id {
+  font-size: 14px;
+  color: #666;
+  min-width: 80px;
+}
+
+.order-product {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.order-secondary-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 13px;
+  color: #666;
+}
+
+.order-content {
+  padding: 16px;
+  background: #fafafa;
+}
+
+.order-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.order-teams-info {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed #ddd;
+}
+
+.teams-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.team-chip {
+  padding: 6px 12px;
+  background: #e3f2fd;
+  border-radius: 16px;
+  font-size: 13px;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+}
+
+
+
+
+/* Модальное окно */
+.employee-status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.employee-status-modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 900px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Заголовок */
+.employee-status-modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.employee-status-modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.employee-status-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+/* Тело */
+.employee-status-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Статистика */
+.statistics-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.statistic-card {
+  flex: 1;
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 15px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.statistic-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.statistic-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.statistic-value.working {
+  color: #28a745;
+}
+
+.statistic-value.absent {
+  color: #dc3545;
+}
+
+/* Список команд */
+.team-item {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.team-header {
+  padding: 15px;
+  background: #f8f9fa;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.team-header:hover {
+  background: #e9ecef;
+}
+
+.team-header-left {
+  flex: 1;
+}
+
+.team-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.team-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.team-type-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.team-type-badge.production {
+  background: #cfe2ff;
+  color: #084298;
+}
+
+.team-type-badge.assembly {
+  background: #d1e7dd;
+  color: #0a3622;
+}
+
+.team-employee-count {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.team-header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.team-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.team-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.team-stat.working {
+  background: #d4edda;
+  color: #155724;
+}
+
+.team-stat.absent {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.team-arrow {
+  color: #6c757d;
+}
+
+/* Сотрудники команды */
+.team-employees {
+  background: white;
+  border-top: 1px solid #dee2e6;
+}
+
+.employees-table-header {
+  display: flex;
+  padding: 12px 15px;
+  background: #f1f3f4;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.employee-name-header {
+  flex: 2;
+}
+
+.employee-status-header {
+  flex: 1;
+}
+
+.employee-row {
+  display: flex;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  align-items: center;
+}
+
+.employee-row:last-child {
+  border-bottom: none;
+}
+
+.employee-info {
+  flex: 2;
+}
+
+.employee-name {
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.employee-details {
+  font-size: 0.9rem;
+  color: #6c757d;
+  display: flex;
+  gap: 15px;
+}
+
+.employee-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.status-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.status-btn:hover {
+  opacity: 0.9;
+}
+
+.status-btn.active {
+  border-width: 2px;
+}
+
+.working-btn.active {
+  border-color: #28a745;
+  background: #d4edda;
+  color: #155724;
+}
+
+.day-off.active {
+  border-color: #ffc107;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.sick.active {
+  border-color: #dc3545;
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.btn-text {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .btn-text {
+    display: inline;
+  }
+}
+
+.current-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.current-status.working {
+  background: #d4edda;
+  color: #155724;
+}
+
+.current-status.day-off {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.current-status.sick {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Футер */
+.employee-status-modal-footer {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-left, .footer-right {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-reset {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-cancel {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.absent-count {
+  margin-left: 5px;
+  background: #dc3545;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.8rem;
 }

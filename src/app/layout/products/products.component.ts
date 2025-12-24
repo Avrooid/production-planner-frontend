@@ -251,7 +251,7 @@ export class ProductsComponent implements OnInit {
   }
 
   saveProduct(): void {
-    if (!this.currentProduct.name.trim() || !this.currentProduct.assemblyProductivity) {
+    if (!this.currentProduct.name.trim()) {
       return;
     }
 
@@ -260,7 +260,7 @@ export class ProductsComponent implements OnInit {
       this.isLoading = true;
       const productDetails: ProductDetails = {
         name: this.currentProduct.name,
-        assemblyProductivity: this.currentProduct.assemblyProductivity,
+        assemblyProductivity: 1,
         active: this.currentProduct.active
       };
 
@@ -286,7 +286,7 @@ export class ProductsComponent implements OnInit {
       this.isLoading = true;
       const productDetails: ProductDetails = {
         name: this.currentProduct.name,
-        assemblyProductivity: this.currentProduct.assemblyProductivity,
+        assemblyProductivity: 1,
         active: this.currentProduct.active
       };
 

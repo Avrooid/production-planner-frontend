@@ -19,11 +19,6 @@
     <!-- Правая панель с таблицей -->
     <div class="team-details" *ngIf="selectedTeam">
       <div class="search-with-add">
-        <div class="search-container">
-          <fa-icon [icon]="faSearch" [class.focused]="isSearchFocused" class="search-icon"></fa-icon>
-          <input (focus)="onSearchFocus()" (blur)="onSearchBlur()" type="text" placeholder="Найти изделие"
-                 class="search-input">
-        </div>
         <button class="btn add-item-button" (click)="openAddModal()">
           <fa-icon [icon]="faPlus"></fa-icon>
           <fa-icon [icon]="faBusinessTime" style="margin-left: 5px;"></fa-icon>
